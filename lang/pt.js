@@ -1,0 +1,122 @@
+// Portuguese (as spoken in Portugal) - the language module.
+//
+// Everything about Portuguese that is a rule rather than a list lives here,
+// behind the same method names every language module will have (see the
+// shared-core design, "Language module"). The app never needs to know it's
+// Portuguese: it calls LANG.numberToWords(2026) and gets "dois mil e vinte e
+// seis". Lists - words, verbs, sentence parts - stay in the data files.
+//
+// Step 3 of the plan (2026-11-06): numbers and times. Moved here unchanged
+// from the app; the golden outputs check they still say exactly the same.
+// Conjugation, joins (a + o = ao), agreement and typed-answer comparison
+// follow in later steps.
+
+const UNITS = ['zero', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez',
+  'onze', 'doze', 'treze', 'catorze', 'quinze', 'dezasseis', 'dezassete', 'dezoito', 'dezanove'];
+const TENS = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+const HUNDREDS = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+// Brazilian spellings of the teens, accepted when typing (see numberQuestion).
+const TEENS_BR = { 'catorze': 'quatorze', 'dezasseis': 'dezesseis', 'dezassete': 'dezessete', 'dezanove': 'dezenove' };
+
+// 0-999. feminine: uma / duas / duzentas… (for hours, and for feminine nouns).
+function belowThousand(n, feminine) {
+  if (n === 100) return 'cem';
+  const parts = [];
+  const h = Math.floor(n / 100), rest = n % 100;
+  if (h) parts.push(feminine && h >= 2 ? HUNDREDS[h].replace(/os$/, 'as') : HUNDREDS[h]);
+  if (rest || !h) {
+    let r;
+    if (rest < 20) r = UNITS[rest];
+    else {
+      const t = Math.floor(rest / 10), u = rest % 10;
+      r = TENS[t] + (u ? ' e ' + UNITS[u] : '');
+    }
+    if (feminine) r = r.replace(/\bum$/, 'uma').replace(/\bdois$/, 'duas');
+    if (!(h && rest === 0)) parts.push(r);
+  }
+  return parts.join(' e ');
+}
+// 0-999,999. Rules: "mil" not "um mil"; "e" after mil only when what follows
+// is under 100 or a round hundred (mil e cem, dois mil e cinco, but mil
+// duzentos e cinquenta).
+function numberToWords(n) {
+  if (n < 1000) return belowThousand(n);
+  const th = Math.floor(n / 1000), rest = n % 1000;
+  const thWords = th === 1 ? 'mil' : belowThousand(th) + ' mil';
+  if (!rest) return thWords;
+  const joiner = (rest < 100 || rest % 100 === 0) ? ' e ' : ' ';
+  return thWords + joiner + belowThousand(rest);
+}
+function numberToBrazilian(words) {
+  return words.replace(/\b(catorze|dezasseis|dezassete|dezanove)\b/g, w => TEENS_BR[w]);
+}
+function formatNumber(n) {
+  // Portugal groups thousands with a space from 5 digits up (10 000); 4 digits stay together.
+  return n >= 10000 ? String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : String(n);
+}
+
+// How each frame joins the hour: plural (as duas), singular (a uma), or
+// masculine (o meio-dia).
+function frameLead(frame, kind) {
+  const table = {
+    at: { pl: 'às', sg: 'à', m: 'ao' },
+    until: { pl: 'até às', sg: 'até à', m: 'até ao' },
+    from: { pl: 'a partir das', sg: 'a partir da', m: 'a partir do' },
+    around: { pl: 'por volta das', sg: 'por volta da', m: 'por volta do' },
+  };
+  return table[frame][kind];
+}
+function minuteWords(m) {
+  if (m === 15) return 'um quarto';
+  if (m === 30) return 'meia';
+  return belowThousand(m);
+}
+function dayPeriod(h24) {
+  if (h24 >= 6 && h24 < 12) return 'da manhã';
+  if (h24 >= 12 && h24 < 20) return 'da tarde';
+  if (h24 >= 20) return 'da noite';
+  return 'da madrugada';
+}
+// Returns the Portuguese for a time. style: 'everyday' | 'timetable'.
+// kind = how a frame joins the hour: 'pl' (as duas), 'sg' (a uma, a
+// meia-noite) or 'm' (o meio-dia).
+function timeToWords(h24, m, frame, style) {
+  let core, kind;
+  if (style === 'timetable') {
+    if (h24 === 0) {
+      core = 'meia-noite' + (m ? ' e ' + belowThousand(m) : '');
+      kind = 'sg';
+    } else {
+      const hw = belowThousand(h24, true); // treze, vinte e uma, vinte e duas
+      core = m ? hw + ' e ' + belowThousand(m) : hw + (h24 === 1 ? ' hora' : ' horas');
+      kind = h24 === 1 ? 'sg' : 'pl';
+    }
+  } else {
+    // Everyday: past the half-hour (in fives) says the NEXT hour "menos" the gap.
+    let hourIdx = h24, mins = m, menos = false;
+    if (m > 30 && m % 5 === 0) { hourIdx = (h24 + 1) % 24; mins = 60 - m; menos = true; }
+    if (hourIdx === 12) { core = 'meio-dia'; kind = 'm'; }
+    else if (hourIdx === 0) { core = 'meia-noite'; kind = 'sg'; }
+    else {
+      const h12 = hourIdx % 12 || 12;
+      core = belowThousand(h12, true);
+      kind = h12 === 1 ? 'sg' : 'pl';
+    }
+    const named = hourIdx !== 12 && hourIdx !== 0;
+    if (mins) core += (menos ? ' menos ' : ' e ') + minuteWords(mins);
+    else if (named) core += kind === 'sg' ? ' hora' : ' horas';
+    if (named) core += ' ' + dayPeriod(hourIdx);
+  }
+  const lead = frame === 'none' ? (kind === 'pl' ? 'São' : 'É') : frameLead(frame, kind);
+  return lead + ' ' + core;
+}
+
+export default {
+  code: 'pt-PT',
+  numberToWords,       // 0-999 999: "mil duzentos e cinquenta"
+  belowThousand,       // 0-999, feminine optional: "duas", "duzentas"
+  numberToBrazilian,   // the Brazilian teens: dezesseis, dezenove
+  formatNumber,        // digits as written in Portugal: 10 000
+  timeToWords,         // (h24, m, frame, style): "às duas e dez da tarde"
+  minuteWords,         // "um quarto", "meia", "vinte" (used by ptClock)
+};

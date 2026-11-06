@@ -1,0 +1,1614 @@
+<!DOCTYPE html>
+<html lang="en" translate="no" class="notranslate">
+<head>
+<meta charset="UTF-8">
+<!-- Never auto-translate: a browser "translate this page" would turn the
+     Portuguese answers into English. -->
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Português Drill (core test)</title>
+<!-- PWA: manifest + icons (Add to Home Screen support) -->
+<link rel="manifest" href="manifest-pt.json">
+<meta name="theme-color" content="#0f0f0f">
+<link rel="icon" href="icons/icon-192.png">
+<!-- iOS: Safari ignores the manifest for home-screen installs, needs its own tags -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PT Drill">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* Andrew flagged the Collections/Level 1/Level 2/Untaught pill text
+     looking slightly bigger than before, right after the pill row switched
+     from wrapping onto a second line to scrolling horizontally in one line
+     (v260831.015). No font-size anywhere in that row actually changed -
+     this is Android Chrome's automatic "font boosting" (aka text
+     autosizer): a heuristic that inflates rendered text size in a block it
+     judges too narrow for its column, and a nowrap+overflow-x row reads
+     differently to that heuristic than a wrapping one did, which is
+     exactly the kind of layout-triggered, no-CSS-change side effect this
+     symptom points to. Every font-size in this app is already deliberately
+     chosen throughout - there's no reason for the browser to be silently
+     adjusting any of them - so disabled globally here rather than patched
+     just on this one row, since the same heuristic could just as easily
+     surface somewhere else next (the Grammar notes cards' new line-height
+     change is another recent candidate). Standard fix, no visual effect on
+     desktop or on text sizes that were never being boosted anyway. */
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+  :root {
+    /* Proverb category colours (2026-10-03) - same palette as the Japan trip app's proverb cards. */
+    --cat-rose:#D98BA5; --cat-teal:#4FB3A9; --cat-wood:#B98553; --cat-sky:#6FC3D9; --cat-lavender:#B79AE0;
+    /* Sentence order slots 1-7 (2026-10-09) - the proverb colours plus two more. */
+    --slot-1:#D98BA5; --slot-2:#6FC3D9; --slot-3:#B79AE0; --slot-4:#4FB3A9; --slot-5:#C99563; --slot-6:#8FCB6B; --slot-7:#E3C468;
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    /* CRITICAL FIX (2026-09-12): .opt:hover used to hardcode this exact
+       value inline instead of a theme variable - harmless here (dark
+       text stays light-on-dark either way), but in the light theme below
+       the same hardcoded hex put near-black hover text on a near-black
+       hover background, making every answer option briefly unreadable on
+       hover. Pulled out as a var so each theme can set its own value;
+       this one is unchanged from the old hardcoded hex, so dark mode
+       looks pixel-identical to before. */
+    --opt-hover-bg: #2a2a2a;
+    --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.16);
+    --text: #f8f6f2;
+    --text-muted: rgba(248,246,242,0.66);
+    --text-dim: rgba(248,246,242,0.42);
+    --accent: #e8c97a;
+    --accent-dim: rgba(232,201,122,0.12);
+    --green: #6fcf97;
+    --green-dim: rgba(111,207,151,0.12);
+    --red: #eb5757;
+    --red-dim: rgba(235,87,87,0.12);
+    --blue: #7eb8f7;
+    --blue-dim: rgba(126,184,247,0.1);
+    --purple: #b39ddb;
+    --purple-dim: rgba(179,157,219,0.12);
+    --radius: 10px;
+    --radius-lg: 16px;
+
+    /* Confidence shading - single source of truth for every score-* and
+       cat-conf-* rule below (item tiles, numbers/times swatches, category
+       swatches), so all three stay in sync automatically instead of each
+       repeating the same eight colours on their own. Deliberately not
+       overridden in the light theme below - these are meant to read as a
+       consistent red/green regardless of theme, the same way they always
+       have, not to shift with the surface colours. This is also the one
+       place a future "colourblind-friendly palette" setting would need to
+       change, if that's ever added. */
+    --conf-neg3: rgba(235,87,87,0.45);
+    --conf-neg2: rgba(235,87,87,0.30);
+    --conf-neg1: rgba(235,87,87,0.15);
+    --conf-neutral: rgba(126,184,247,0.14);
+    --conf-pos1: rgba(111,207,151,0.15);
+    --conf-pos2: rgba(111,207,151,0.30);
+    --conf-pos3: rgba(111,207,151,0.45);
+    --conf-pos4: rgba(111,207,151,0.60);
+
+    /* Category-tile confidence BAR vars (2026-09-22) - same hue families as
+       the --conf-* swatch fills just above, but boosted opacity so a thin
+       stacked-bar segment (buildCategoryTile's per-category spread bar)
+       reads clearly at a few px tall, where the pale swatch alphas would
+       wash out. Values carried over as-is from the kanji-cards app's own
+       progress bar, already tuned for exactly this use rather than
+       reinvented here. */
+    --conf-neg3-bar: rgba(235,87,87,0.92);
+    --conf-neg2-bar: rgba(235,87,87,0.68);
+    --conf-neg1-bar: rgba(235,87,87,0.42);
+    --conf-neutral-bar: rgba(126,184,247,0.55);
+    --conf-pos1-bar: rgba(111,207,151,0.42);
+    --conf-pos2-bar: rgba(111,207,151,0.65);
+    --conf-pos3-bar: rgba(111,207,151,0.85);
+    --conf-pos4-bar: #6fcf97;
+    --conf-untested-bar: rgba(255,255,255,0.38);
+  }
+
+  /* Light theme - opt-in only via Settings, dark (the :root values above)
+     stays the default for everyone unless they switch this on themselves. */
+  :root[data-theme="light"] {
+    --cat-rose:#B23E63; --cat-teal:#1E7F73; --cat-wood:#8A5A2E; --cat-sky:#2C7A94; --cat-lavender:#6A4FA0;
+    --slot-1:#B23E63; --slot-2:#2C7A94; --slot-3:#6A4FA0; --slot-4:#1E7F73; --slot-5:#8A5A2E; --slot-6:#4E8A2C; --slot-7:#9A7A12;
+    --bg: #f7f5f0;
+    --surface: #ffffff;
+    --surface2: #efece4;
+    /* See CRITICAL FIX (2026-09-12) above the dark --opt-hover-bg - this is
+       the light-theme value that was missing entirely before, which is
+       what caused the bug. */
+    --opt-hover-bg: #e3ddd0;
+    --border: rgba(0,0,0,0.10);
+    --border-hover: rgba(0,0,0,0.20);
+    --text: #1a1a1a;
+    --text-muted: rgba(26,26,26,0.66);
+    --text-dim: rgba(26,26,26,0.45);
+    --accent: #a9740f;
+    --accent-dim: rgba(169,116,15,0.12);
+    --green: #2f9e5c;
+    --green-dim: rgba(47,158,92,0.12);
+    --red: #c53d3d;
+    --red-dim: rgba(197,61,61,0.12);
+    --blue: #2f6fa8;
+    --blue-dim: rgba(47,111,168,0.10);
+    --purple: #7856a8;
+    --purple-dim: rgba(120,86,168,0.12);
+
+    --conf-neg3-bar: rgba(197,61,61,0.88);
+    --conf-neg2-bar: rgba(197,61,61,0.62);
+    --conf-neg1-bar: rgba(197,61,61,0.38);
+    --conf-neutral-bar: rgba(47,111,168,0.50);
+    --conf-pos1-bar: rgba(47,158,92,0.38);
+    --conf-pos2-bar: rgba(47,158,92,0.60);
+    --conf-pos3-bar: rgba(47,158,92,0.80);
+    --conf-pos4-bar: #2f9e5c;
+    --conf-untested-bar: rgba(0,0,0,0.30);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-weight: 500;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background: var(--surface);
+  }
+
+  /* The "日本語" in the app's own logo/wordmark was missing this too - same
+     audit that turned up the pill bug. */
+  .app-heading { font-size: 19px; font-weight: 700; letter-spacing: 0.02em; color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .app-heading span { color: var(--accent); }
+  /* Cancels the rule above for this one span specifically - see the
+     easter-egg comment above triggerSpontaneousProverbs() further down for
+     why it's deliberately not gold/hinted at all. */
+  .app-heading .app-heading-tap { color: var(--text); cursor: pointer; }
+
+  .app-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .head-btns { display: flex; gap: 8px; }
+  .nav-row { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
+  .nav-row .nav-pills { flex-shrink: 1; min-width: 0; }
+  @media (max-width: 380px) { header { padding-left: 12px !important; padding-right: 12px !important; } .nav-pills { gap: 4px; } .nav-pill { padding: 5px 8px; } }
+
+  .settings-btn {
+    flex-shrink: 0;
+    width: 30px; height: 30px; border-radius: 99px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-muted); font-size: 15px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .settings-btn:hover { border-color: var(--border-hover); color: var(--text); }
+  .settings-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  .settings-btn.muted { color: var(--text-dim); }
+  /* Hold-to-peek on word tiles (2026-10-02): no iOS copy/Look Up bubble or
+     text selection while a card is held. */
+  #vocab-tile-grid .kana-ref-card { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  #vocab-tile-grid .kana-ref-card.tile-peeking { border-color: var(--accent); }
+  /* Peek bubble - floats above (or beside) the held card, since a finger
+     covers the card itself. Never intercepts touches. */
+  .tile-peek-bubble {
+    position: fixed; z-index: 1000; pointer-events: none;
+    background: var(--surface); border: 2px solid var(--accent); border-radius: 12px;
+    padding: 10px 14px; text-align: center; max-width: min(78vw, 320px);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+  }
+  .tile-peek-bubble .peek-jp { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 26px; font-weight: 700; color: var(--text); line-height: 1.25; }
+  .tile-peek-bubble .peek-romaji { font-size: 17px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+  .tile-peek-bubble .peek-en { font-size: 14px; color: var(--text-muted); margin-top: 3px; }
+  /* WHAT'S NEW FLAG (2026-09-01) - green instead of the usual gold .active
+     colour, deliberately reusing the same green already used for a correct
+     answer elsewhere, so it reads as "something to notice", not an error
+     state or a second "active screen" indicator. Cleared (see
+     showSettingsScreen()) the moment Settings is actually opened - reading
+     the changelog itself is optional, just noticing the cog and tapping it
+     is enough to clear it. Mutually exclusive with .active in practice:
+     the flag clears in the same click that makes the screen active, so
+     the two are never both painting the cog at once. */
+  .settings-btn.has-update { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+
+  .nav-pills { display: flex; gap: 6px; overflow-x: auto; flex-shrink: 0; scrollbar-width: none; }
+  .nav-pills::-webkit-scrollbar { display: none; }
+  .nav-pill {
+    padding: 5px 10px; border-radius: 99px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--text-muted); font-size: 12px; font-weight: 600; cursor: pointer;
+    transition: all 0.15s; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    white-space: nowrap;
+  }
+  .nav-pill:hover { border-color: var(--border-hover); color: var(--text); }
+  .nav-pill.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  /* Was hardcoded #fff from back when the app was dark-only - white text on
+     "Back" stood out fine against a dark pill background, but on the light
+     theme it meant white-on-pale (or white-on-white when not also .active),
+     unreadable. var(--text) resolves to the same near-white in dark mode
+     (#f8f6f2, indistinguishable from #fff) and to dark text in light mode
+     (#1a1a1a), so this one line fixes it for both themes without needing a
+     separate light-theme override block. */
+  .nav-pill.sub-screen { color: var(--text); }
+
+  main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2rem 1rem; }
+
+  .screen { width: 100%; max-width: 480px; display: none; }
+  .screen.visible { display: flex; flex-direction: column; gap: 1rem; }
+
+  /* Settings screen. Reused as the reference-page title too (#vocab-ref-title/
+     #vocab-tile-selection-title), which occasionally shows a lone kanji label
+     baked into the title text (e.g. item-counters reference: "つ — general
+     things") - font-family added so that renders in the app's own Japanese
+     font rather than falling through to the system sans-serif stack, same
+     fix as .level-pill below. Short single-line headings either way, so this
+     is safe for the plain-English titles too (same reasoning as .nav-pill). */
+  /* Back (2026-10-16): top-left of every inner page, naming where it goes. */
+  .nav-back { align-self: flex-start; background: none; border: none; padding: 2px 0; margin: 0 0 -0.4rem; font: inherit; font-size: 14px; font-weight: 600; color: var(--accent); cursor: pointer; text-align: left; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nav-back:active { opacity: 0.6; }
+  .settings-title { font-size: 22px; font-weight: 700; text-align: center; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .settings-sub { font-size: 14px; font-weight: 500; color: var(--text-muted); text-align: center; }
+
+  #match-vocab-view, #match-theme-view, #match-random-view { display: flex; flex-direction: column; gap: 1rem; }
+
+  .group-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 0.875rem 1.25rem;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; transition: border-color 0.15s;
+    user-select: none;
+  }
+  .group-card:hover { border-color: var(--border-hover); }
+  .install-card { align-items: center; gap: 12px; cursor: default; }
+  .install-card .install-why { margin-top: 4px; }
+  .install-btn { flex-shrink: 0; padding: 8px 16px; border-radius: 99px; border: 1px solid var(--accent); background: var(--accent-dim); color: var(--accent); font-weight: 700; font-size: 13px; cursor: pointer; font-family: inherit; }
+  .group-card.selected { border-color: var(--accent); background: var(--accent-dim); }
+  /* Used for the "Highlight the meaning instead of sound" toggle specifically
+     - while Reversed mode is on, that toggle has no effect (reversed always
+     shows English regardless), so it's greyed out and unclickable rather
+     than left sitting there looking like it still does something. */
+  .group-card.disabled { opacity: 0.35; pointer-events: none; cursor: default; }
+  /* Visually secondary but still fully clickable - unlike .disabled above,
+     used for settings that currently gate nothing (Andrew mode between
+     experiments) rather than settings that are inert while some other
+     condition holds. */
+  .group-card.dimmed .group-name { opacity: 0.6; }
+  .group-card.dimmed .group-count { opacity: 0.45; }
+  .group-card.emphasis { border-color: var(--accent); }
+  /* BUG FIX (2026-09-13): see the comment above backup-scores-card in the
+     HTML below for the full story - this switches just that one card from
+     .group-card's default horizontal row to a column, so the two buttons
+     stack under the description instead of squeezing it. */
+  #backup-scores-card, #private-vocab-card { flex-direction: column; align-items: stretch; gap: 0.6rem; }
+
+  /* Select all / Random 20 side by side on the tile-selection screen - half
+     the vertical space of two full-width cards. When Random 20 is hidden
+     (regular, non-theme categories) it's removed from the flex flow entirely,
+     so Select all naturally reclaims the full row on its own. */
+  .tile-select-actions-row { display: flex; gap: 0.75rem; }
+  .tile-select-actions-row .group-card { flex: 1; min-width: 0; padding-left: 1rem; padding-right: 1rem; }
+  /* Labels carry numbers now (Select all 45 / Random 20 of 155), so they may wrap on a narrow phone rather than being cut off. */
+  .tile-select-actions-row .group-name { white-space: normal; font-size: 14px; line-height: 1.25; }
+
+  .group-info { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+
+  /* Category-level confidence swatch (whole-category average, excluding
+     never-drilled items). Same 8-band thresholds and colours as every other
+     confidence display in the app (see confidenceBand) - distinct class
+     family (cat-conf-*, not score-*) purely so it can never collide with
+     the per-word/per-pool classes on the same element, not because the
+     bands or colours themselves differ. Boxed 48x48 side swatch, same shape
+     as .score-swatch - a full-card tint was tried first but looked too heavy
+     across a long stacked list of categories (the same "too dominating"
+     concern the Numbers/Times swatch itself was resized over), so this
+     matches that established boxed pattern instead of the kana-ref-card
+     full-tint one. */
+  .cat-swatch {
+    flex: 0 0 auto; width: 48px; height: 48px; border-radius: var(--radius);
+    margin-left: 0.75rem; background: var(--surface2);
+  }
+
+  /* Category tile confidence SPREAD BAR (2026-09-22, trial) - replaces the
+     single-colour .cat-swatch average blob on the main category-browse
+     screen (buildCategoryTile) with a thin per-band stacked bar, so a
+     category that's evenly "OK" reads differently from one that's half
+     very-good/half very-bad averaging to the same middle colour. Scoped to
+     .cat-tile specifically (not .match-card-select generally) so the
+     Select-all/Random-20 cards, the Theme tab's static cards, and the "All
+     vocabulary"/"All kanji" swatches - all of which share .match-card-select
+     but are NOT built by buildCategoryTile - are completely untouched by
+     this trial. If it earns its keep, .cat-swatch and its cat-conf-* rules
+     above become dead code for these tiles (left in place for now since
+     other swatch users, e.g. .score-swatch, are unrelated). */
+  /* Specificity note: #match-category-list .match-card-select (below)
+     is an ID+class rule setting align-items:center for the old row
+     layout - a plain .cat-tile class alone can never outrank an ID
+     selector, however it's ordered in the file, so this needs to match
+     .match-card-select's own ID+class scoping to actually win. */
+  #match-category-list .match-card-select.cat-tile { flex-direction: column; align-items: stretch; gap: 0.5rem; padding-top: 1.05rem; padding-bottom: 1.05rem; }
+  /* Same restructure for Collections (#match-theme-view) and the
+     Numbers/Times/Counters cards below - both use .group-card rather
+     than .match-card-select, and .group-card's own base rule (a plain
+     class, not ID-scoped) is lower specificity than .group-card.cat-tile
+     here, so no ID-scoping trick is needed for this one. */
+  .group-card.cat-tile { flex-direction: column; align-items: stretch; gap: 0.5rem; padding-top: 1.05rem; padding-bottom: 1.05rem; }
+  .cat-tile-top { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+  .cat-tile-top .group-name { flex: 1; min-width: 0; }
+  .cat-tile-top .group-count { flex: 0 0 auto; white-space: nowrap; }
+  /* (2026-10-07) Numbers-screen cards have a sentence, not a short count, on
+     the right - on a narrow phone it squeezed the title into a column and
+     ran over it (Pixel 10 Pro XL). Stacked: title, then the description. */
+  .cat-tile-top.cat-tile-top-stack { flex-direction: column; align-items: flex-start; gap: 3px; }
+  .cat-tile-top.cat-tile-top-stack .group-count { white-space: normal; }
+  .cat-bar {
+    display: flex; height: 8px; border-radius: 99px; overflow: hidden;
+    background: var(--surface2); cursor: pointer;
+  }
+  .cat-bar .seg { height: 100%; min-width: 3px; }
+  /* Level 1/2 category cards need a flex row (text left, swatch right) to
+     hold this - scoped to #match-category-list only so the unrelated
+     "Random reading" card (also .match-card-select, but plain stacked text,
+     sits just below the list) isn't affected. */
+  #match-category-list .match-card-select { display: flex; align-items: center; justify-content: space-between; }
+  .group-name { font-size: 15px; font-weight: 700; }
+  .group-count { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+
+  .toggle {
+    width: 40px; height: 22px; border-radius: 99px;
+    background: var(--surface2); border: 1px solid var(--border);
+    position: relative; transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle::after {
+    content: ""; position: absolute; top: 3px; left: 3px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--text-dim); transition: all 0.2s;
+  }
+  .group-card.selected .toggle { background: var(--accent); border-color: var(--accent); }
+  .group-card.selected .toggle::after { left: 21px; background: #0f0f0f; }
+
+  .start-btn {
+    padding: 14px; border-radius: var(--radius); width: 100%;
+    background: var(--accent); border: none; color: #0f0f0f;
+    font-size: 16px; font-weight: 700; cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .start-btn:hover { opacity: 0.88; }
+  .start-btn:disabled { opacity: 0.35; cursor: default; }
+
+  /* Drill screen */
+  .progress-wrap { display: flex; align-items: center; gap: 12px; }
+  .progress-bar-bg { flex: 1; height: 3px; background: var(--surface2); border-radius: 99px; }
+  .progress-bar-fill { height: 3px; border-radius: 99px; background: var(--accent); transition: width 0.3s; }
+  .progress-label { font-size: 12px; font-weight: 600; color: var(--text-dim); white-space: nowrap; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 2.5rem 2rem;
+    text-align: center;
+  }
+  .type-badge {
+    display: inline-block; font-size: 11px; padding: 3px 10px;
+    border-radius: 99px; margin-bottom: 1.25rem;
+    border: 1px solid;
+  }
+  .type-base { color: var(--text-muted); border-color: var(--border); }
+
+  .char-display { font-size: 100px; line-height: 1; margin-bottom: 0.5rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-align: center; }
+  /* Small tsu (っ/ッ) and the second character of youon/loanword combos
+     (きゃ, ファ etc) - sized relative to whatever font-size they land in,
+     via em, so this works the same whether it's a 100px char-display or a
+     15px reference row. See escapeHtmlText() in the script for where this
+     is applied. */
+  .small-kana { font-size: 0.65em; }
+  .alt-form { font-size: 13px; font-weight: 600; color: var(--accent); text-align: center; margin-top: 0.15rem; margin-bottom: 0.5rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  /* Materials-only "seen in context" card (see q-context-card in
+     renderQuestion) - a separate card between the main drill card and Next,
+     not a section inside the main card itself. Used to sit inline on the
+     main card (between the character and the audio button), which crowded
+     out the character on longer seenAs entries, and got duplicated down
+     near the feedback text so it would still be visible post-answer without
+     scrolling back up. Moving it to its own card between the feedback text
+     and Next solves both at once - it's out of the way of the character,
+     and it's still the next thing in view after answering, so the feedback
+     duplication (formerly .feedback-seen-as) is gone, not just relocated.
+     Shown from question-load, not gated on answering - it's real-world
+     context, not the reading, so it's not a spoiler. seenAs text is a real
+     Japanese sentence/sign fragment mixed with its English translation in
+     one string, so that line needs the JP font, not just isolated
+     characters - same treatment as .qneg-example-jp. The location/date and
+     filename lines are Latin-only so they stay on the system font stack. */
+  .context-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1rem 1.25rem; text-align: left;
+  }
+  .context-card-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.03em;
+    text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.5rem;
+  }
+  .seen-as-text { font-size: 13px; color: var(--text-muted); line-height: 1.45; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  /* Marks where the drilled word sits within its own example sentence (see
+     findSeenAsHighlightRange/renderSeenAsHtml) - not every entry finds a
+     match (conjugated verbs partially do via the stripped-ending fallback,
+     a handful of template/meta-note entries don't at all), so this only
+     ever adds emphasis, never required for the sentence to make sense. */
+  mark.seen-as-highlight {
+    background: var(--accent-dim); color: var(--accent); font-weight: 600;
+    border-radius: 3px; padding: 0 0.15em;
+  }
+  .context-card-meta { font-size: 12px; color: var(--text-muted); margin-top: 0.4rem; }
+  .context-card-file { font-size: 11px; color: var(--text-dim); margin-top: 0.15rem; }
+
+  .prompt { font-size: 14px; font-weight: 600; color: var(--text-muted); margin-bottom: 1.75rem; text-align: center; }
+
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opt {
+    position: relative;
+    padding: 13px 8px; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all 0.15s; line-height: 1.35;
+  }
+  .opt:hover:not(:disabled) { border-color: var(--border-hover); background: var(--opt-hover-bg); }
+  .opt.correct { background: var(--green-dim); border-color: var(--green); color: var(--green); font-weight: 700; }
+  .opt.wrong { background: var(--red-dim); border-color: var(--red); color: var(--red); font-weight: 700; }
+  .opt:disabled { cursor: default; }
+  .opt .opt-rd { display: block; font-size: 13px; font-weight: 600; opacity: 0.85; }
+  /* Answers in Portuguese (reversed vocab, verb forms, contractions, numbers):
+     bold, full colour, sized by length - see optPtSize (from the Japanese
+     app's kana answers, 2026-10-14). */
+  .opt .opt-rd.opt-pt { font-weight: 700; opacity: 1; line-height: 1.25; }
+  .opt .sound-spelling { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-top: 2px; }
+  .opt .sound-spelling:empty { display: none; }
+  /* SENTENCE BUILDER (2026-10-24, from the Japanese app) - the desk-sheet
+     columns, tappable. */
+  #screen-sb { max-width: none; --sbw: 118px; }
+  .sb-head { max-width: 640px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
+  .sb-strip { position: sticky; top: 0; z-index: 5; max-width: 760px; width: 100%; margin: 0 auto; box-sizing: border-box; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }
+  .sb-prompt { font-size: 16px; font-weight: 600; color: var(--accent); margin-bottom: 6px; }
+  .sb-pt { font-weight: 700; font-size: 20px; line-height: 1.6; }
+  .sb-empty { font-size: 13px; color: var(--text-dim); padding: 6px 0; }
+  .sb-en { font-size: 14px; color: var(--text-muted); font-style: italic; margin-top: 2px; line-height: 1.5; }
+  .sb-notes { font-size: 12.5px; color: var(--slot-5); margin-top: 4px; }
+  .sb-chunk { display: inline-block; margin: 2px 0 4px; line-height: 1.3; border-bottom: 3px solid var(--slot); padding: 0 1px; }
+  .sb-chunk.sb-verb-only { color: var(--text-dim); font-weight: 500; }
+  .sb-chunk.sb-wrong, .sb-chunk.sb-extra { text-decoration: line-through; opacity: 0.6; }
+  .sb-chunk.sb-right { box-shadow: inset 0 -3px 0 var(--green); }
+  .sb-chunk.sb-ending { text-decoration: underline wavy var(--slot-5); text-underline-offset: 4px; }
+  .sb-answer { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); cursor: pointer; }
+  .sb-verdict { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+  .sb-verdict.good { color: var(--green); font-weight: 700; }
+  .sb-buttons { margin-top: 8px; }
+  .sb-stats { font-size: 11.5px; color: var(--text-dim); margin-top: 6px; }
+  .sb-scroll { width: 100%; overflow-x: auto; padding-bottom: 6px; }
+  .sb-cols { display: flex; gap: 6px; align-items: flex-start; width: max-content; margin: 0 auto; }
+  .sb-col { flex: 0 0 var(--sbw); }
+  .sb-card { cursor: pointer; user-select: none; -webkit-user-select: none; }
+  .sb-card .ds-pt { font-size: 14px; }
+  .sb-card .ds-en { color: var(--text-dim); font-weight: 400; }
+  .sb-card.sb-picked { background: color-mix(in srgb, var(--slot) 28%, var(--bg)); border-color: var(--slot); box-shadow: 0 0 0 1.5px var(--slot); }
+  .sb-card.sb-ok { box-shadow: 0 0 0 2px var(--green); }
+  .sb-card.sb-should { outline: 2px dashed var(--green); outline-offset: -2px; }
+  .sb-forms { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border); }
+  .sb-forms-head { font-size: 10.5px; color: var(--text-muted); line-height: 1.25; }
+  .sb-form { font-size: 14px; font-weight: 700; padding: 5px 4px; border-radius: 7px; border: 1px solid var(--border); border-left: 3px solid var(--slot); background: var(--bg); color: var(--text); cursor: pointer; font-family: inherit; }
+  .sb-form.active { background: color-mix(in srgb, var(--slot) 28%, var(--bg)); border-color: var(--slot); }
+  .sb-form.sb-should { outline: 2px dashed var(--green); outline-offset: -2px; }
+  .sb-hint { font-size: 11px; color: var(--text-dim); padding: 4px 2px; }
+  #grammar-table-list { display: flex; flex-direction: column; gap: 8px; }
+  .grammar-tables-head { text-align: left; margin-bottom: 0.4rem; }
+  #sb-mode-row { justify-content: center; }
+  #sb-mode-row .level-pill:disabled { opacity: 0.35; cursor: default; }
+  .sb-prompt-pt { cursor: pointer; }
+  .sb-en-built { font-size: 16px; font-style: normal; color: var(--text); }
+  .sb-en-answer { font-style: normal; color: var(--green); font-weight: 600; }
+  /* Reading face: English first and bright, the Portuguese small. */
+  .sb-rev .sb-card { display: flex; flex-direction: column; }
+  .sb-rev .sb-card .ds-en { order: 1; font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .sb-rev .sb-card .ds-pt { order: 2; font-size: 11px; font-weight: 500; color: var(--text-dim); }
+  .sb-rev .sb-form { font-size: 12px; text-align: left; }
+  .sbp-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.8rem 0.9rem; display: flex; flex-direction: column; gap: 6px; }
+  .sbp-title { font-size: 13.5px; font-weight: 700; margin-bottom: 2px; }
+  .sbp-row { display: grid; grid-template-columns: 7.5rem 1fr 2.6rem; align-items: center; gap: 8px; font-size: 12.5px; }
+  .sbp-label { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sbp-bar { height: 8px; border-radius: 99px; background: var(--surface2); overflow: hidden; }
+  .sbp-bar span { display: block; height: 100%; background: var(--slot); border-radius: 99px; }
+  .sbp-pct { text-align: right; font-weight: 700; color: var(--text-muted); }
+  .sbp-few .sbp-bar span { opacity: 0.35; }
+  .sbp-note { font-size: 11.5px; color: var(--text-dim); margin-top: 2px; }
+  .sb-tip { font-size: 11px; color: var(--text-dim); text-align: center; max-width: 640px; margin: 0 auto; }
+  @media (min-width: 900px) and (min-height: 520px) {
+    #screen-sb { --sbw: clamp(118px, 10.5vw, 160px); }
+    .sb-card .ds-pt { font-size: clamp(14px, 1.2vw, 18px); }
+    .sb-pt { font-size: clamp(20px, 1.8vw, 26px); }
+  }
+  /* Phone on its side: a slimmer strip, so more of the columns show. */
+  @media (max-height: 500px) {
+    .sb-strip { padding: 6px 10px; }
+    .sb-prompt { font-size: 14px; margin-bottom: 2px; }
+    .sb-pt { font-size: 17px; line-height: 1.45; }
+    .sb-empty, .sb-verdict { font-size: 12px; padding: 0; margin-top: 2px; }
+    .sb-buttons { margin-top: 4px; }
+    .sb-buttons .ds-btn { padding: 4px 14px; }
+    .sb-stats { display: none; }
+    #screen-sb .sb-head .settings-title { display: none; }
+  }
+  /* DESK SHEETS (2026-10-15, from the Japanese app) - on screen the pages
+     scroll sideways; printed, each .ds-page is one A4 landscape sheet. */
+  #screen-desk-sheets { max-width: none; }
+  .ds-toolbar { max-width: 640px; width: 100%; margin: 0 auto 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+  .ds-buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .ds-btn { font-size: 13px; font-weight: 600; color: var(--text-muted); border: 1px solid var(--border); border-radius: 99px; padding: 8px 18px; background: transparent; cursor: pointer; font-family: inherit; }
+  .ds-btn-main { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+  .ds-scroll { width: 100%; overflow-x: auto; }
+  #desk-sheets { display: flex; flex-direction: column; gap: 24px; width: max-content; margin: 0 auto; }
+  .ds-page { width: 1080px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .ds-page-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .ds-page-title span { color: var(--text-muted); font-weight: 600; font-size: 12px; margin-left: 8px; }
+  .ds-page-title .ds-example { font-size: 13px; font-style: italic; margin-left: 14px; font-weight: 500; }
+  .ds-cols { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; align-items: start; }
+  .ds-col { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .ds-col.wide { grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; align-content: start; }
+  .ds-col.wide .ds-head, .ds-col.wide .ds-note, .ds-col.wide .ds-group-head { grid-column: span 2; }
+  .ds-group-head { border-radius: 6px; padding: 2px 6px; margin-top: 2px; background: color-mix(in srgb, var(--slot) 14%, transparent); border-left: 3px solid var(--slot); line-height: 1.25; }
+  .ds-group-head .ds-pt { font-size: 13px; }
+  .ds-group-head .ds-forms { font-size: 10.5px; color: var(--text-muted); }
+  .ds-head { border-radius: 8px; padding: 5px 6px; background: color-mix(in srgb, var(--slot) 22%, transparent); border-left: 4px solid var(--slot); }
+  .ds-head-top { display: flex; align-items: center; gap: 6px; }
+  .ds-num { font-weight: 800; color: var(--slot); font-size: 15px; }
+  .ds-role { font-size: 11.5px; font-weight: 700; line-height: 1.2; flex: 1; }
+  .ds-note { font-size: 10px; color: var(--text-muted); line-height: 1.25; padding: 0 2px; }
+  .ds-card { border: 1px solid var(--border); border-left: 3px solid var(--slot); border-radius: 7px; padding: 2px 4px; text-align: center; background: var(--bg); break-inside: avoid; }
+  .ds-pt { font-size: 14px; font-weight: 700; line-height: 1.15; }
+  .ds-pt.long { font-size: 12.5px; }
+  .ds-pt.xlong { font-size: 11px; }
+  .ds-sub { font-size: 9.5px; color: var(--text-muted); line-height: 1.15; }
+  .ds-en { font-size: 9.5px; line-height: 1.15; }
+  .ds-verb { background: color-mix(in srgb, var(--slot) 12%, var(--bg)); }
+  @media print {
+    @page { size: A4 landscape; margin: 7mm; }
+    html, body { background: #fff !important; color: #000 !important; }
+    header, .ds-toolbar, .screen:not(#screen-desk-sheets) { display: none !important; }
+    main { padding: 0 !important; display: block !important; }
+    #screen-desk-sheets { display: block !important; max-width: none !important; }
+    .ds-scroll { overflow: visible !important; }
+    #desk-sheets { display: block !important; width: auto !important; margin: 0 !important; }
+    .ds-page { width: auto !important; height: 194mm; border: none !important; border-radius: 0; padding: 0 !important; background: #fff !important; color: #000 !important; break-after: page; page-break-after: always; overflow: hidden; }
+    .ds-page:last-child { break-after: auto; page-break-after: auto; }
+    .ds-page, .ds-page * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .ds-head { background: #e4e4e4 !important; border-left-color: #555 !important; }
+    .ds-num { color: #000 !important; }
+    .ds-card { background: #fff !important; border-color: #aaa !important; border-left-color: #666 !important; padding: 1px 3px !important; }
+    .ds-col { gap: 3px !important; }
+    .ds-verb, .ds-group-head { background: #f0f0f0 !important; border-left-color: #666 !important; }
+    .ds-sub, .ds-note, .ds-example, .ds-page-title span, .ds-forms { color: #444 !important; }
+    .ds-en, .ds-pt, .ds-role, .ds-page-title { color: #000 !important; }
+    .ds-pt { font-size: 15.5px !important; line-height: 1.12 !important; }
+    .ds-pt.long { font-size: 13.5px !important; }
+    .ds-pt.xlong { font-size: 12px !important; }
+    .ds-sub { font-size: 10px !important; }
+    .ds-en { font-size: 10.5px !important; font-weight: 600; }
+    .ds-group-head .ds-pt { font-size: 13.5px !important; }
+    .ds-group-head .ds-forms { font-size: 10.5px !important; }
+    .ds-role { font-size: 12.5px !important; }
+    .ds-note { font-size: 10.5px !important; }
+  }
+
+  .opt-num {
+    position: absolute; top: 4px; left: 6px;
+    font-size: 10px; font-weight: 600; color: var(--text-dim);
+    opacity: 0.6; pointer-events: none;
+  }
+  /* Typed-answer mode (kana -> romaji only, see toggleTypeAnswerMode) - an
+     alternative to picking from four options: type the reading yourself.
+     Row spans both .options grid columns since it's the only "option" on
+     screen. 16px input font is deliberate - anything smaller triggers an
+     unwanted auto-zoom on focus in iOS Safari. */
+  .type-answer-row { grid-column: 1 / -1; display: flex; gap: 8px; align-items: stretch; }
+  .type-answer-input {
+    flex: 1; min-width: 0; padding: 13px 14px; border-radius: var(--radius);
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text); font-size: 16px; font-weight: 600;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    outline: none; transition: all 0.15s;
+  }
+  .type-answer-input:focus { border-color: var(--accent); }
+  .type-answer-input::placeholder { color: var(--text-dim); font-weight: 500; }
+  .type-answer-input.correct { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+  .type-answer-input.wrong { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+  .type-answer-input:disabled { cursor: default; opacity: 0.9; }
+  .type-answer-submit {
+    flex-shrink: 0; padding: 13px 18px; border-radius: var(--radius);
+    border: 1px solid var(--accent); background: var(--accent-dim);
+    color: var(--accent); font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .type-answer-submit:hover:not(:disabled) { background: var(--accent); color: #fff; }
+  .type-answer-submit:disabled { cursor: default; opacity: 0.6; }
+  .kbd-hint {
+    position: absolute; top: 4px; left: 6px;
+    font-size: 10px; font-weight: 500; color: var(--text-dim);
+    opacity: 0.55; pointer-events: none;
+  }
+
+  .feedback {
+    min-height: 22px; font-size: 14px; font-weight: 500;
+    margin-top: 1rem; text-align: center;
+  }
+  .feedback.good { color: var(--green); }
+  .feedback.bad { color: var(--red); }
+  .feedback-standard-note { font-size: 13px; font-weight: 700; color: var(--accent); margin-top: 0.35rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+
+  .next-btn {
+    position: relative;
+    padding: 12px; border-radius: var(--radius); width: 100%;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text); font-size: 14px; cursor: pointer;
+    transition: all 0.15s; margin-top: 0.5rem;
+    visibility: hidden;
+  }
+  .next-btn:hover { border-color: var(--border-hover); background: var(--surface2); }
+
+  /* Wraps speak-btn + romaji-btn side by side - both are hint triggers for
+     the same word, so they read as one control group rather than two
+     unrelated buttons. Individual buttons carry no margin of their own;
+     this row supplies the centring/spacing that .speak-btn used to. */
+  .hint-btn-row {
+    display: flex; align-items: center; justify-content: center;
+    gap: 0.5rem; margin: 0.4rem auto 0.6rem;
+  }
+  .speak-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); font-size: 20px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .speak-btn:hover { border-color: var(--accent); background: var(--accent-dim); }
+  .speak-btn:disabled { opacity: 0.35; cursor: default; }
+  .speak-btn:disabled:hover { border-color: var(--border); background: var(--surface2); }
+
+  /* Results screen */
+  .results-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 2.5rem 2rem;
+    text-align: center;
+  }
+  .score-big { font-size: 56px; font-weight: 700; color: var(--accent); }
+  .score-sub { font-size: 14px; font-weight: 600; color: var(--text-muted); margin-top: 4px; margin-bottom: 1.5rem; }
+  .missed-label { font-size: 12px; font-weight: 600; color: var(--text-dim); margin-bottom: 0.75rem; }
+  /* Daily greeting (2026-10-11) */
+  .greet-overlay { position: fixed; inset: 0; z-index: 200; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,0.6); }
+  .greet-overlay.show { display: flex; }
+  .greet-stack { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 10px; }
+  .greet-card { background: var(--surface); border: 1.5px solid var(--accent); border-radius: var(--radius-lg); padding: 1.2rem 1.1rem 1rem; box-shadow: 0 10px 40px rgba(0,0,0,0.45); }
+  .greet-line { cursor: pointer; border-radius: var(--radius); padding: 4px 6px; }
+  .greet-line + .greet-line { margin-top: 0.8rem; }
+  .greet-pt { font-size: 18px; font-weight: 700; color: var(--text); line-height: 1.35; }
+  .greet-hello .greet-pt { font-size: 30px; color: var(--accent); }
+  .greet-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+  .greet-en { font-size: 12.5px; color: var(--text-dim); margin-top: 1px; }
+  .greet-sentence { padding-top: 0.9rem; }
+  .greet-sentence-head { display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; padding: 0 6px; }
+  .greet-another { background: transparent; border: 1px solid var(--border); color: var(--text-muted); border-radius: 99px; width: 30px; height: 30px; font-size: 16px; cursor: pointer; }
+  .greet-sent .greet-pt { font-size: 17px; }
+  .grammar-sentence { box-shadow: none; padding: 0.9rem 0.9rem 0.8rem; }
+  .greet-sent + .greet-sent { margin-top: 0.4rem; }
+  .greet-hint { font-size: 12px; color: var(--text-muted); text-align: center; margin: 0.2rem 0 0; }
+  /* Numbers & times (2026-10-11) */
+  .numbers-section { flex-direction: column; gap: 0.6rem; }
+  .tool-card { display: block; cursor: default; }
+  .tool-pills { margin-top: 0.6rem; }
+  .tool-input { width: 100%; margin-top: 0.6rem; padding: 10px 12px; font-size: 20px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface2); color: var(--text); }
+  .time-tool-entry { display: flex; align-items: center; gap: 6px; margin-top: 0.6rem; font-size: 20px; color: var(--text-muted); }
+  .time-tool-entry select { font-size: 20px; padding: 6px 8px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface2); color: var(--text); }
+  .time-tool-reset-btn { margin-left: auto; font-size: 20px; width: 40px; height: 40px; border-radius: 99px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; }
+  .tool-output { margin-top: 0.8rem; min-height: 1.5em; }
+  .tool-pt { display: block; font-size: 20px; font-weight: 700; color: var(--accent); cursor: pointer; line-height: 1.35; }
+  .tool-sub { display: block; font-size: 13px; color: var(--text-dim); margin-top: 3px; }
+  .options.long-options { grid-template-columns: 1fr; }
+  /* Say it out loud (2026-10-11) */
+  .say-reveal-btn { grid-column: 1 / -1; width: 100%; margin: 0; }
+  .say-answer-box { grid-column: 1 / -1; text-align: center; margin: 0.2rem 0 0.4rem; }
+  .say-answer { font-size: 30px; font-weight: 700; color: var(--accent); margin-bottom: 0.3rem; }
+  /* Verbs & Grammar (2026-10-11) */
+  .verb-tense-row { flex-wrap: wrap; }
+  .verb-all-card { cursor: default; margin-bottom: 0.6rem; }
+  .theme-note { margin: -2px 0 6px; }
+  /* Verb group headings toggle the whole group (2026-10-16). */
+  .verb-group-label { cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none; }
+  .verb-group-label .vg-tick { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--text-dim); display: inline-flex; align-items: center; justify-content: center; font-size: 10px; color: transparent; }
+  .verb-group-label.all .vg-tick { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .verb-group-label.some .vg-tick { border-color: var(--accent); }
+  .verb-group-label.all, .verb-group-label.some { color: var(--accent); }
+  .verb-group-bar { margin-bottom: 0.45rem; }
+  .verb-group-label { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-dim); margin: 0.9rem 0 0.4rem; }
+  .grammar-note { font-size: 15px; line-height: 1.55; color: var(--text-muted); margin: 0.75rem 0 1rem; }
+  .grammar-note p { margin: 0 0 0.75rem; }
+  .grammar-note ul { margin: 0 0 0.75rem; padding-left: 1.2rem; }
+  .grammar-note li { margin-bottom: 0.4rem; }
+  .grammar-note b { color: var(--text); }
+  .grammar-note i { color: var(--accent); font-style: normal; }
+  .gtable { width: 100%; border-collapse: collapse; margin: 0.25rem 0 0.9rem; font-size: 14.5px; }
+  .gtable th, .gtable td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .gtable th { font-size: 13px; color: var(--accent); font-weight: 700; }
+  .gtable td:first-child { color: var(--text-dim); white-space: nowrap; }
+  .gtable td b { color: var(--accent); }
+  .gtable .gtable-en { color: var(--text-dim); font-size: 13px; }
+  .gtable-head { font-size: 15px; color: var(--text); margin: 1rem 0 0.2rem; }
+  .gtable-head span { font-size: 12.5px; font-weight: 500; color: var(--text-dim); margin-left: 6px; }
+  .gtable-note { font-size: 13.5px; color: var(--text-dim); }
+  .gtable-say { cursor: pointer; }
+  .gtable-say:active td { background: var(--accent-dim); }
+  #verb-tile-grid .kana-ref-card { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  .pt-blank { display: inline-block; min-width: 2.2em; border-bottom: 2px solid var(--accent); color: var(--text-dim); text-align: center; }
+  .pt-blank.filled { color: var(--accent); }
+  .missed-chars { font-size: 18px; font-weight: 600; line-height: 1.6; margin-bottom: 1.5rem; color: var(--red); }
+  .no-missed { font-size: 14px; font-weight: 600; color: var(--green); margin-bottom: 1.5rem; }
+
+  .results-btns { display: flex; flex-direction: column; gap: 8px; }
+  .btn-primary {
+    padding: 13px; border-radius: var(--radius);
+    background: var(--accent); border: none;
+    color: #0f0f0f; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-secondary {
+    padding: 13px; border-radius: var(--radius);
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-secondary:hover { border-color: var(--border-hover); background: var(--surface2); }
+
+  /* Stats bar */
+  .stats-row { display: flex; gap: 8px; }
+  .stat-pill {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 0.75rem;
+    text-align: center;
+  }
+  .stat-num { font-size: 20px; font-weight: 700; }
+  .stat-lbl { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-top: 2px; }
+  .stat-num.green { color: var(--green); }
+  .stat-num.red { color: var(--red); }
+  .stat-num.gold { color: var(--accent); }
+  .stat-num.blue { color: var(--blue); }
+
+  /* Match mode */
+  .match-card-select {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 0.875rem 1.25rem;
+    cursor: pointer; transition: border-color 0.15s; user-select: none;
+  }
+  #match-category-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .match-card-select:hover { border-color: var(--border-hover); }
+  .match-card-select.selected { border-color: var(--accent); background: var(--accent-dim); }
+  .match-card-select .group-name { font-size: 15px; font-weight: 700; }
+  .section-divider { height: 1px; background: var(--accent); opacity: 0.45; margin: 0.25rem 0; }
+  .vocab-ref-card {
+    display: flex; justify-content: space-between; align-items: center;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 0.5rem 1rem;
+    cursor: pointer; transition: border-color 0.15s; user-select: none;
+    font-size: 13px; font-weight: 600; color: var(--accent);
+    margin-bottom: -0.25rem; text-decoration: none;
+    /* No line-height was ever set here, so a label short enough to stay on
+       one line (true for most of these cards) looked fine on the browser
+       default alone - but a longer one that wraps on a narrow phone (the
+       Grammar notes hub's "Object-taking verbs" label, flagged on a Pixel
+       10 Pro XL) had its two lines sitting right on top of each other,
+       crushed rather than just wrapped. 1.35 matches the value .opt (the
+       multiple-choice answer cards) already uses for the same reason -
+       gives wrapped text room to breathe without changing this card's
+       height at all when the label fits on one line, which is still most
+       of them. */
+    line-height: 1.35;
+    /* Some of these labels embed real kana/kanji directly (e.g. the tense
+       card's いきます/きます/かえります, or the new だれも/どこも/なにも card) -
+       missing font-family here is the exact same bug class as .level-pill
+       had, just not caught in that sweep since it required actually
+       rendering the category list rather than the reference screens
+       themselves. Same fix, same reasoning. */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .vocab-ref-card:hover { border-color: var(--accent); }
+  /* Reference links folded into a tile-selection screen (2026-08-31, see
+     CATEGORY_REFERENCE_LINKS) sit directly above the centre-justified "tap
+     a word to select it for drilling" line - a left-justified card with a
+     barely-there default border reads as unbalanced against that centred
+     text below it. Gold border always on here (not just :hover) rather
+     than changing alignment or anything else - the full-width highlight is
+     what restores the balance, scoped to this one container so every other
+     .vocab-ref-card (Grammar notes hub, the two notes links, etc.) keeps
+     its normal subtle-until-hovered look. */
+  #vocab-tile-selection-ref-links .vocab-ref-card { border-color: var(--accent); }
+  .vocab-ref-arrow { color: var(--text-muted); }
+  #vocab-ref-list { display: flex; flex-direction: column; gap: 0.6rem; }
+  /* Guarded to real-mouse devices only - on a touchscreen, a plain :hover
+     rule fires on tap but never gets a "pointer left" event to clear it
+     afterward, so the button stays stuck fully gold until something else
+     is tapped. :active above still gives a touch tap its own momentary
+     feedback, which clears itself the instant the tap ends. */
+  
+  .match-card-select .group-count { font-size: 12px; font-weight: 600; color: var(--text-dim); margin-top: 3px; }
+
+  /* Level filter pills on Match screen */
+  .level-filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  /* #vocab-level-filter-row specifically (Collections/Level 1/Level 2/
+     Untaught) - wrapping was fine while every label was short, but
+     "Untaught" is twice the width of the "Trip" pill it replaced, and on a
+     narrow phone (flagged on a Pixel 10 Pro XL) that was enough to tip the
+     last pill onto its own second line by itself, looking broken rather
+     than like a deliberate second row. Scrolls horizontally instead - same
+     fix .nav-pills already uses for the same class of problem - so the row
+     always stays one line and no pill's own text ever wraps either
+     (white-space: nowrap on .level-pill above). Every other row still
+     using the shared .level-filter-row class (hiragana/katakana/numbers/
+     counter pills) is untouched - those can have many more pills and
+     wrapping is still the right behaviour there. */
+  /* Wraps again (2026-10-24): with Verbs added the pills no longer fit one
+     phone-width line, and a pill hidden off the edge is easy to miss. */
+  #vocab-level-filter-row, #verbs-level-row { flex-wrap: wrap; gap: 6px; }
+  #vocab-level-filter-row::-webkit-scrollbar { display: none; }
+  /* Slightly tighter than the shared .level-pill padding (18px sides) -
+     four pills (Collections/Level 1/Level 2/Untaught) were just barely
+     wider than the row on a narrow phone (Pixel 10 Pro XL), enough to
+     read as a rendering mistake rather than an intentional scroll. This
+     plus the row's own tighter 6px gap above reclaims enough width to
+     fit all four without the scroll ever engaging on that size screen.
+     Scoped to this row only - every other .level-filter-row (hiragana/
+     katakana/numbers/counters) keeps the default padding, since those
+     wrap onto multiple lines instead and don't have this problem. */
+  #vocab-level-filter-row .level-pill, #verbs-level-row .level-pill { padding: 6px 14px; }
+  #vocab-level-filter-row .level-pill.level-pill-icon, #verbs-level-row .level-pill.level-pill-icon { padding: 5px 10px; display: inline-flex; align-items: center; justify-content: center; }
+  /* Random page (2026-10-07) - single-choice cards, then toggles, then Start */
+  #match-random-view .group-card.cat-tile.selected { border-color: var(--accent); }
+  .random-choice-desc { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+  /* Search + Andrew mode's shared row - set apart from the main level row
+     above so both read as distinct from the regular Collections/L1/L2/
+     Untaught lineup. The row itself is always visible now (Search is for
+     everyone); the Andrew pill inside it still hides/shows via inline
+     style, same as level-pill-untaught does in the row above. */
+  .level-filter-row.andrew-row { margin-top: 8px; }
+  /* Pill-shaped search field - same 99px radius/border language as
+     .level-pill, but a text input + submit icon instead of a button. flex:1
+     so it fills the row on its own when the Andrew pill next to it is
+     hidden, and yields space to it once the pill's shown. Border is gold
+     permanently (Andrew's explicit call), not just while focused - unlike
+     every other input in the app, this is meant to read as a standing
+     feature of the page, not something that only lights up while in use. */
+  .vocab-search-pill {
+    flex: 1; min-width: 0; display: flex; align-items: center;
+    border: 1px solid var(--accent); border-radius: 99px;
+    background: transparent; padding-left: 14px; padding-right: 4px;
+  }
+  /* × to clear (from the Japanese app, 2026-10-14) - only while there's text. */
+  .vocab-search-clear {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 50%; border: none;
+    background: var(--border); color: var(--text-muted); cursor: pointer; padding: 0;
+  }
+  .vocab-search-clear:hover { color: var(--text); }
+  .vocab-search-input {
+    flex: 1; min-width: 0; background: transparent; border: none; outline: none;
+    color: var(--text); font-size: 13px; font-weight: 600;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    padding: 6px 4px;
+  }
+  .vocab-search-input::placeholder { color: var(--text-dim); font-weight: 500; }
+  .vocab-search-btn {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--accent);
+    background: transparent; color: var(--accent); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .vocab-search-btn:hover { color: var(--accent); background: var(--accent-dim); }
+  /* "Type at least 2 characters" / "No matches yet" - only ever shown when a
+     search doesn't make it to the results screen, so this never competes
+     with the tile-selection screen's own empty state. */
+  .vocab-search-message { font-size: 12.5px; color: var(--text-dim); text-align: center; }
+  /* Font-family was missing here, same bug class as .nav-pill already guards
+     against: without it, kana/kanji pill labels (verb-conj-pills' verb forms,
+     the specific-counter/item-counter unit pills - つ/人/個/本/枚/匹/冊/台/回/歳)
+     fall through to the system sans-serif stack, which on some devices
+     renders kana with the strokes visually joined up instead of as separate
+     characters. Applied to ALL level-pills (not just the Japanese-labelled
+     ones) since BIZ UDPGothic renders Latin text fine too - same call as
+     .nav-pill above. */
+  .level-pill {
+    padding: 6px 18px; border-radius: 99px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-muted);
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    white-space: nowrap;
+  }
+  .level-pill.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  .level-pill:disabled { opacity: 0.35; cursor: default; }
+  /* Ties the Level 1/2/Untaught pill text to the same blue/orange/purple used
+     for theme-tile borders (LEVEL_BORDER_COLORS in the script) - but only
+     while Collections itself is the one being viewed (setMatchLevel toggles
+     "showing-theme-colours" on the row), since the colour only means anything
+     in that context - the rest of the time these pills look like normal
+     unselected pills. :not(.active) so the existing gold .active state still
+     wins once a pill is the one currently selected. */
+
+  #vocab-level-filter-row.showing-theme-colours #level-pill-random:not(.active) { color: var(--green); border-color: rgba(111,207,151,0.4); }
+  .latest-range-row { justify-content: center; }
+
+  /* "Back up my progress" - Settings screen (2026-09-12, replaces the old
+     hidden copy-to-clipboard debug tool). Download saves kanaScores as a
+     dated .json file; Restore reads one back in via a hidden file input
+     triggered by a visible button. See the comment above
+     downloadScoresBackup() for the full reasoning. */
+  .backup-status-msg {
+    display: none; text-align: center; font-size: 12px; font-weight: 600;
+    color: var(--accent); margin-top: 0.4rem;
+  }
+  .backup-status-msg.show { display: block; }
+  .backup-status-msg.error { color: var(--red); }
+  .kana-ref-card {
+    flex: 1; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 4px;
+    text-align: center; display: flex; flex-direction: column;
+    align-items: center; gap: 4px; min-width: 0;
+  }
+  .kana-ref-card.empty { background: transparent; border-color: transparent; }
+  /* Confidence tint on word cards (restored 2026-10-16 - lost in the
+     Portuguese build's CSS clean-up, as the class names are built in code). */
+  .kana-ref-card.score-neg3 { background: var(--conf-neg3); }
+  .kana-ref-card.score-neg2 { background: var(--conf-neg2); }
+  .kana-ref-card.score-neg1 { background: var(--conf-neg1); }
+  .kana-ref-card.score-neutral { background: var(--conf-neutral); }
+  .kana-ref-card.score-pos1 { background: var(--conf-pos1); }
+  .kana-ref-card.score-pos2 { background: var(--conf-pos2); }
+  .kana-ref-card.score-pos3 { background: var(--conf-pos3); }
+  .kana-ref-card.score-pos4 { background: var(--conf-pos4); }
+  .kana-ref-card.selected { border-color: var(--accent); background: var(--accent-dim); cursor: pointer; }
+  /* (2026-10-07) Thicker "selected" edge - the 1px gold line was easy to miss.
+     1px border + 2px inset ring = 3px, the same weight Colours tiles use,
+     without the tile changing size (a wider border would reflow the grid).
+     Colours tiles already have a real 3px border, so they skip the ring. */
+  .kana-ref-card.selected, .match-card-select.selected, #match-random-view .group-card.cat-tile.selected { box-shadow: inset 0 0 0 2px var(--accent); }
+  .kana-ref-card.colour-tile.selected { box-shadow: none; }
+  .kanji-tile-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .kanji-tile-grid .kana-ref-card { flex: 1 1 30%; min-width: 0; cursor: pointer; }
+  .kana-ref-char {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 28px; font-weight: 600; color: var(--text);
+    line-height: 1;
+  }
+  .kana-ref-rom {
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+  }
+  /* Listening (2026-10-07) */
+  .listen-play { width: 96px; height: 96px; border-radius: 50%; border: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+  .listen-play:active { transform: scale(0.96); }
+</style>
+</head>
+<body>
+
+  <!-- Daily greeting (2026-10-11) - first thing in <body> so it exists before
+       the script below runs (the Japanese build learnt that the hard way). -->
+  <div class="greet-overlay" id="greeting-overlay" onclick="if (event.target === this) dismissGreeting();">
+    <div class="greet-stack">
+      <div class="greet-card">
+        <div id="greeting-lines"></div>
+      </div>
+      <div class="greet-card greet-sentence" id="greeting-sentence"></div>
+      <div class="greet-hint">Tap a line to hear it</div>
+      <button class="start-btn" onclick="dismissGreeting()">Continuar</button>
+    </div>
+  </div>
+
+
+<header>
+  <!-- Header (2026-10-24, following the Japanese app): sound and settings up
+       on the heading line; the tabs in Portuguese on their own row, page
+       titles in English. Verbs moved into Palavras (a pill beside Basics /
+       Travel / Life) to make room for Frases, the sentence-building tab. -->
+  <div class="app-heading-row">
+    <div class="app-heading"><span class="app-heading-tap" onclick="showGreeting()">Português</span> <span>drill</span></div>
+    <div class="head-btns">
+      <!-- Global sound switch (2026-10-02) - off = the app makes no sound at
+           all (see soundAllowed), so it never cuts into music. -->
+      <button class="settings-btn" id="sound-btn" onclick="toggleSoundOn()" title="Sound on" aria-label="Sound on"></button>
+      <button class="settings-btn" id="settings-btn" onclick="toggleSettings()" title="Settings" aria-label="Settings">⚙</button>
+    </div>
+  </div>
+  <div class="nav-row">
+    <div class="nav-pills">
+      <button class="nav-pill active" id="nav-match" onclick="tryResumeMatch()" lang="pt-PT">Palavras</button>
+      <button class="nav-pill" id="nav-build" onclick="showBuildPage()" lang="pt-PT">Frases</button>
+      <button class="nav-pill" id="nav-numbers" onclick="showNumbersScreen()" lang="pt-PT">Números</button>
+      <button class="nav-pill" id="nav-grammar" onclick="showGrammarScreen()" lang="pt-PT">Gramática</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Settings screen -->
+  <div class="screen" id="screen-settings">
+    <div class="settings-title">Settings</div>
+    <div class="settings-sub">All data and settings are stored on this device and never go anywhere else.</div>
+
+    <div style="text-align:center; margin-top:0.9rem; margin-bottom:0.4rem; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+      <a href="./instructions.html" target="_blank" style="display:inline-block; font-size:13px; font-weight:600; color:var(--text-muted); text-decoration:none; border:1px solid var(--border); border-radius:99px; padding:8px 18px;">How this app works →</a>
+      <a href="./changelog.html" target="_blank" id="whats-new-link" style="display:inline-block; font-size:13px; font-weight:600; color:var(--text-muted); text-decoration:none; border:1px solid var(--border); border-radius:99px; padding:8px 18px; background:transparent;">What's new →</a>
+    </div>
+
+    <!-- Install card (from the Japanese app, 2026-10-14): only shown when the
+         app is open as a web page rather than installed - see refreshInstallCard(). -->
+    <div class="group-card install-card" id="install-card" style="display:none;">
+      <div class="group-info">
+        <div class="group-name">Install the app</div>
+        <div class="group-count" id="install-card-steps"></div>
+        <div class="group-count install-why">Installed, it opens full screen from its own icon and works offline.</div>
+      </div>
+      <button type="button" class="install-btn" id="install-btn" onclick="runInstallPrompt()" style="display:none;">Install</button>
+    </div>
+
+    <div class="group-card" id="theme-toggle-card" onclick="toggleTheme()" style="cursor:pointer;">
+      <div class="group-info">
+        <div class="group-name">Light theme</div>
+        <div class="group-count">Switches from the default dark look to a light one</div>
+      </div>
+      <div class="toggle" id="theme-toggle"></div>
+    </div>
+
+    <div class="group-card" id="hint-penalty-toggle-card" onclick="toggleHintPenalty()" style="cursor:pointer;">
+      <div class="group-info">
+        <div class="group-name">Half credit for hinted answers</div>
+        <div class="group-count">Using a hint before answering halves the confidence boost for a correct answer</div>
+      </div>
+      <div class="toggle" id="hint-penalty-toggle"></div>
+    </div>
+
+    <div class="group-card" id="strict-accents-toggle-card" onclick="toggleStrictAccents()" style="cursor:pointer;">
+      <div class="group-info">
+        <div class="group-name">Accents must be right when typing</div>
+        <div class="group-count">Off: "voce" for você counts, with a reminder and half the confidence boost. On: it's marked wrong.</div>
+      </div>
+      <div class="toggle" id="strict-accents-toggle"></div>
+    </div>
+
+    <div class="group-card" id="decay-colours-toggle-card" onclick="toggleDecayAffectsColours()" style="cursor:pointer;">
+      <div class="group-info">
+        <div class="group-name">Fade confidence colours over time</div>
+        <div class="group-count">Also fades the colours themselves over time, not just drill odds — off by default</div>
+      </div>
+      <div class="toggle" id="decay-colours-toggle"></div>
+    </div>
+
+    <!-- "Work offline" toggle removed 2026-10-06 - offline is now always on
+         (see syncServiceWorkerRegistration). -->
+
+    <div class="group-card" id="backup-scores-card" style="cursor:default;">
+      <div class="group-info">
+        <div class="group-name">Back up my progress</div>
+        <div class="group-count">Saves your scores to a file you can restore later</div>
+      </div>
+      <button class="start-btn" onclick="downloadScoresBackup()">Download backup</button>
+      <button class="start-btn" onclick="triggerRestoreFilePicker()">Restore from backup</button>
+      <input type="file" id="restore-file-input" accept="application/json,.json" style="display:none;" onchange="handleRestoreFileSelected(event)">
+      <div class="backup-status-msg" id="backup-status-msg"></div>
+    </div>
+
+    <!-- Private vocab (2026-10-02) - see PRIVATE VOCAB PACKS in the script. -->
+    <div class="group-card" id="private-vocab-card" style="cursor:default;">
+      <div class="group-info">
+        <div class="group-name">Private vocab</div>
+        <div class="group-count" id="private-vocab-status">Add extra word lists from a file, kept on this device only.</div>
+      </div>
+      <button class="start-btn" onclick="triggerPrivateVocabPicker()">Load file</button>
+      <button class="start-btn" id="private-vocab-remove-btn" onclick="removePrivateVocab()" style="display:none;">Remove</button>
+      <input type="file" id="private-vocab-input" accept="application/json,.json" style="display:none;" onchange="handlePrivateVocabSelected(event)">
+      <div class="backup-status-msg" id="private-vocab-msg"></div>
+    </div>
+
+    <div style="text-align:center; font-size:12px; font-weight:600; color:var(--text-dim); margin-top:0.75rem;">v261105.001</div>
+  </div>
+
+
+  <!-- Vocab tile-selection reference screen (flat categories: colours, trip-prep) -->
+  <div class="screen" id="screen-vocab-tile-selection">
+    <div class="settings-title" id="vocab-tile-selection-title">Reference</div>
+    <!-- Populated by showVocabTileSelection from CATEGORY_REFERENCE_LINKS
+         (2026-08-31) - 0 or more reference-screen links for whichever
+         category is showing, right below the heading and above the "tap a
+         word" instruction. Used to be separate cards sitting above the
+         category tile in the list screen instead - folded in here so the
+         reference always travels with its category wherever the category's
+         tile ends up, rather than needing to be kept in sync with its
+         position in the list by hand. Empty (no children) for categories
+         with no reference screen, which collapses to no visible gap. -->
+    <div id="vocab-tile-selection-ref-links"></div>
+    <!-- Tap to hear (2026-10-02) - same categories as the romaji view: a
+         panic-button phrasebook where tapping a card speaks it instead of
+         selecting it. Hidden where speech isn't supported. -->
+    <div class="group-card" id="vocab-tile-speak-card" onclick="toggleTileTapToSpeak()" style="cursor:pointer; display:none;">
+      <div class="group-info">
+        <div class="group-name">Tap a card to hear it</div>
+        <div class="group-count" id="vocab-tile-speak-desc">Reads the Portuguese out loud when you tap a card, instead of picking it for a drill. Turn off to choose words to drill.</div>
+      </div>
+      <div class="toggle"></div>
+    </div>
+    <div class="settings-sub" id="vocab-tile-selection-sub">Tap a word to select it for drilling.</div>
+
+    <div class="tile-select-actions-row">
+      <div class="group-card" id="vocab-tile-select-all-card" onclick="toggleSelectAllVocabTiles()" style="cursor:pointer;">
+        <div class="group-info">
+          <div class="group-name" id="vocab-tile-select-all-label">Select all</div>
+        </div>
+        <div style="font-size:20px; color:var(--text-muted);">→</div>
+      </div>
+      <div class="group-card" id="vocab-tile-random20-card" onclick="toggleRandomVocabTiles()" style="cursor:pointer; display:none;">
+        <div class="group-info">
+          <div class="group-name" id="vocab-tile-random20-label">Random 20</div>
+        </div>
+        <div style="font-size:20px; color:var(--text-muted);">→</div>
+      </div>
+    </div>
+
+    <div id="vocab-tile-grid"></div>
+
+    <div class="group-card" id="vocab-tile-reversed-mode-card" onclick="toggleVocabTileReversedMode()" style="cursor:pointer;">
+      <div class="group-info">
+        <div class="group-name">Reverse the drill direction</div>
+        <div class="group-count">See the English first and pick the Portuguese, instead of reading Portuguese and picking the English</div>
+      </div>
+      <div class="toggle"></div>
+    </div>
+
+    <!-- Added here directly (2026-09-22, Andrew) - the equivalent global
+         toggle on the L1/L2/Collections index screens already covered every
+         category's drill in practice (renderQuestion reads typeAnswerMode
+         globally, regardless of entry point - see its own comment), but
+         Andrew had no way to find or flip it from inside a category he'd
+         already opened without backing out to the index and scrolling to
+         the bottom of a long list first. Same per-category persistence and
+         mutual-exclusion treatment as the two toggles above it - see
+         syncVocabTileModeToggles. -->
+    <div class="group-card" id="vocab-tile-type-answer-card" onclick="toggleVocabTileTypeAnswerMode()" style="cursor:pointer;">
+      <div class="group-info">
+        <div class="group-name">Type the answer instead of choosing</div>
+        <div class="group-count">Type the Portuguese yourself instead of picking from four options — from the English, or from what you hear when Listen is on. Missing accents are accepted with a reminder unless Settings says otherwise.</div>
+      </div>
+      <div class="toggle"></div>
+    </div>
+
+    <div class="group-card" id="vocab-tile-listen-card" onclick="toggleVocabTileListenMode()" style="cursor:pointer;">
+      <div class="group-info">
+        <div class="group-name">Listen instead of reading</div>
+        <div class="group-count">Hear the word instead of seeing it, then pick the meaning — or, with Type on, write down what you heard. Needs sound on; no effect while reversed.</div>
+      </div>
+      <div class="toggle"></div>
+    </div>
+    <div class="group-card say-card" id="vocab-tile-say-card" onclick="toggleVocabTileSayMode()" style="cursor:pointer;">
+      <div class="group-info">
+        <div class="group-name">Say it out loud</div>
+        <div class="group-count">See the English, say the Portuguese out loud, then tap to see and hear the answer and mark yourself. Overrides the switches above.</div>
+      </div>
+      <div class="toggle"></div>
+    </div>
+
+    <button class="start-btn" id="vocab-tile-drill-btn" onclick="drillVocabTileSelection()" disabled style="margin-top:0.5rem;">Drill with this selection</button>
+    <button class="btn-secondary" onclick="navBack()">← Back</button>
+  </div>
+
+  <!-- Drill screen -->
+  <div class="screen" id="screen-drill">
+    <div class="progress-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="progress-label" id="prog-label">1 / 0</div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-pill"><div class="stat-num green" id="stat-correct">0</div><div class="stat-lbl">correct</div></div>
+      <div class="stat-pill"><div class="stat-num red" id="stat-wrong">0</div><div class="stat-lbl">wrong</div></div>
+      <div class="stat-pill"><div class="stat-num blue" id="stat-hints">0</div><div class="stat-lbl">hints</div></div>
+      <div class="stat-pill"><div class="stat-num gold" id="stat-left">0</div><div class="stat-lbl">left</div></div>
+    </div>
+    <div class="card">
+      <div style="text-align:center;"><span class="type-badge" id="q-badge">base</span></div>
+      <div class="char-display" id="q-char"></div>
+      <div class="alt-form" id="q-alt-form" style="display:none;"></div>
+      <div class="hint-btn-row" id="hint-btn-row">
+        <button class="speak-btn" id="speak-btn" onclick="speakCurrent()" title="Hear it" style="display:none;">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="3 9 8 9 12 5 12 19 8 15 3 15" fill="currentColor" stroke="currentColor"></polygon>
+            <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+            <path d="M18.5 5.5a9 9 0 0 1 0 13"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="prompt" id="q-prompt"></div>
+      <div class="options" id="q-options"></div>
+      <div class="feedback" id="q-feedback"></div>
+    </div>
+    <div class="context-card" id="q-context-card" style="display:none;">
+      <div class="context-card-label">Context seen in:</div>
+      <div id="q-context-card-body"></div>
+    </div>
+    <button class="next-btn" id="next-btn" onclick="nextQuestion()">Next →</button>
+  </div>
+
+  <!-- Results screen -->
+  <div class="screen" id="screen-results">
+    <div class="results-card">
+      <div class="score-big" id="res-score">0/0</div>
+      <div class="score-sub" id="res-msg">—</div>
+      <div class="missed-label" id="res-missed-label"></div>
+      <div id="res-missed"></div>
+      <div class="results-btns">
+        <button class="btn-primary" onclick="drillAgain()">Drill again</button>
+        <button class="btn-secondary" id="res-missed-btn" onclick="drillMissed()" style="display:none">Drill missed only</button>
+        <button class="btn-secondary" onclick="goBackToSettings()">Change groups</button>
+      </div>
+    </div>
+  </div>
+  <!-- Match settings screen -->
+  <div class="screen visible" id="screen-match-settings">
+    <div class="settings-title">Vocab</div>
+    <div class="settings-sub">Pick a word set, or tap the dice for a random drill.</div>
+
+    <!-- Portuguese build: Groups (cross-topic collections, by tag), the
+         random page, and Topics (every category in vocab.js). The Japanese
+         build's L1/L2/L3/Untaught pills were course levels. -->
+    <div class="level-filter-row" id="vocab-level-filter-row">
+      <button class="level-pill active" id="level-pill-theme" onclick="setMatchLevel('theme')">Groups</button>
+      <button class="level-pill level-pill-icon" id="level-pill-random" onclick="setMatchLevel('random')" title="Random drills" aria-label="Random drills"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"></rect><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"></circle><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"></circle><circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" stroke="none"></circle></svg></button>
+      <!-- Topic pills (Basics / Travel / Life) are added here from vocab.js's
+           PT_DRILL_SECTIONS - see renderSectionPills. -->
+    </div>
+
+    <div class="level-filter-row andrew-row" id="vocab-andrew-filter-row">
+      <div class="vocab-search-pill">
+        <input type="text" id="vocab-search-input" class="vocab-search-input" placeholder="Search Portuguese or English…" onkeydown="handleVocabSearchKeydown(event)" oninput="syncVocabSearchClear()">
+        <button type="button" class="vocab-search-clear" id="vocab-search-clear" onclick="clearVocabSearch()" title="Clear" aria-label="Clear search" style="display:none;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
+        </button>
+      </div>
+      <button class="vocab-search-btn" onclick="submitVocabSearch()" title="Search" aria-label="Search">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="vocab-search-message" id="vocab-search-message" style="display:none;"></div>
+
+    <!-- Group cards are built from vocab.js's PT_DRILL_GROUPS (renderGroupCards). -->
+    <div id="match-theme-view"></div>
+
+    <div id="match-vocab-view" style="display:none;">
+      <div id="match-category-list"></div>
+    </div>
+
+    <div id="match-random-view" style="display:none;">
+      <div class="group-card cat-tile" data-random-key="all" onclick="selectRandomChoice('all')" style="cursor:pointer;">
+        <div class="cat-tile-top cat-tile-top-stack">
+          <div class="group-name">All vocabulary</div>
+          <div class="random-choice-desc">20 random words from everything</div>
+        </div>
+        <div class="cat-bar" id="theme-all-vocab-swatch"></div>
+      </div>
+      <div class="group-card cat-tile" data-random-key="weakest" onclick="selectRandomChoice('weakest')" style="cursor:pointer;">
+        <div class="cat-tile-top cat-tile-top-stack">
+          <div class="group-name">Weakest 20</div>
+          <div class="random-choice-desc">The 20 words you've scored lowest on</div>
+        </div>
+        <div class="cat-bar" id="theme-weakest-vocab-swatch"></div>
+      </div>
+      <div class="group-card cat-tile" data-random-key="untested" onclick="selectRandomChoice('untested')" style="cursor:pointer;">
+        <div class="cat-tile-top cat-tile-top-stack">
+          <div class="group-name">Untested 20</div>
+          <div class="random-choice-desc">20 words you haven't been tested on yet<span id="untested-count"></span></div>
+        </div>
+        <div class="cat-bar" id="theme-untested-vocab-swatch"></div>
+      </div>
+      <div class="group-card cat-tile" data-random-key="sounds" onclick="selectRandomChoice('sounds')" style="cursor:pointer;">
+        <div class="cat-tile-top cat-tile-top-stack">
+          <div class="group-name">Sounds alike</div>
+          <div class="random-choice-desc">Hear a word, pick which of two it was: avó or avô, pão or pau, caro or carro. With sound off, read the English and pick the spelling. The switches below don't apply.</div>
+        </div>
+        <div class="cat-bar" id="theme-sounds-swatch"></div>
+      </div>
+
+      <div class="group-card" id="reversed-mode-toggle-card" onclick="toggleVocabReversed()" style="cursor:pointer;">
+        <div class="group-info">
+          <div class="group-name">Reverse the drill direction</div>
+          <div class="group-count">See the English first and pick the Portuguese, instead of reading Portuguese and picking the English</div>
+        </div>
+        <div class="toggle" id="reversed-mode-toggle"></div>
+      </div>
+      <div class="group-card" id="type-answer-toggle-card" onclick="toggleTypeAnswerMode()" style="cursor:pointer;">
+        <div class="group-info">
+          <div class="group-name">Type the answer instead of choosing</div>
+          <div class="group-count">Type the Portuguese yourself instead of picking from four options — from the English, or from what you hear when Listen is on. Missing accents are accepted with a reminder unless Settings says otherwise.</div>
+        </div>
+        <div class="toggle" id="type-answer-toggle"></div>
+      </div>
+      <div class="group-card" id="listen-toggle-card" onclick="toggleListenMode()" style="cursor:pointer;">
+        <div class="group-info">
+          <div class="group-name">Listen instead of reading</div>
+          <div class="group-count">Hear the word instead of seeing it, then pick the meaning — or, with Type on, write down what you heard. Needs sound on; no effect while reversed.</div>
+        </div>
+        <div class="toggle" id="listen-toggle"></div>
+      </div>
+      <div class="group-card say-card" id="say-toggle-card" onclick="toggleSayMode()" style="cursor:pointer;">
+      <div class="group-info">
+        <div class="group-name">Say it out loud</div>
+        <div class="group-count">See the English, say the Portuguese out loud, then tap to see and hear the answer and mark yourself. Overrides the switches above.</div>
+      </div>
+      <div class="toggle"></div>
+    </div>
+      <button class="start-btn" id="random-start-btn" onclick="startSelectedRandom()" disabled>Start</button>
+    </div>
+
+  </div>
+
+  <!-- Verbs screen (2026-10-11) - see VERBS & GRAMMAR in the script. -->
+  <div class="screen" id="screen-verbs">
+    <!-- Verbs live under Palavras now (2026-10-24): same title and pill row
+         as the word lists, with Verbs lit. See renderSectionPills. -->
+    <div class="settings-title">Vocab</div>
+    <div class="level-filter-row" id="verbs-level-row"></div>
+    <div class="settings-sub" id="verb-selection-sub">Tap verbs to pick them, then drill 20 forms from the tenses above.</div>
+    <div class="level-filter-row verb-tense-row" id="verb-tense-row"></div>
+    <!-- Confidence across every verb form in the chosen tenses (2026-10-16). -->
+    <div class="group-card cat-tile verb-all-card">
+      <div class="cat-tile-top">
+        <div class="group-name">All verbs</div>
+        <div class="group-count" id="verb-all-count"></div>
+      </div>
+      <div class="cat-bar" id="verb-all-swatch"></div>
+    </div>
+    <div class="tile-select-actions-row">
+      <div class="group-card" id="verb-select-all-card" onclick="toggleSelectAllVerbs()" style="cursor:pointer;">
+        <div class="group-info"><div class="group-name" id="verb-select-all-label">Select all</div></div>
+        <div style="font-size:20px; color:var(--text-muted);">→</div>
+      </div>
+      <div class="group-card" id="verb-random-card" onclick="toggleRandomVerbs()" style="cursor:pointer;">
+        <div class="group-info"><div class="group-name" id="verb-random-label">Random 20</div></div>
+        <div style="font-size:20px; color:var(--text-muted);">→</div>
+      </div>
+    </div>
+    <div id="verb-tile-grid"></div>
+    <div class="group-card" id="verb-type-card" onclick="toggleGrammarType()" style="cursor:pointer;">
+      <div class="group-info">
+        <div class="group-name">Type the answer instead of choosing</div>
+        <div class="group-count">Type the verb form yourself. Missing accents are accepted with a reminder unless Settings says otherwise.</div>
+      </div>
+      <div class="toggle"></div>
+    </div>
+    <div class="group-card say-card" id="verb-say-card" onclick="toggleGrammarSay()" style="cursor:pointer;">
+      <div class="group-info">
+        <div class="group-name">Say it out loud</div>
+        <div class="group-count">Say the form out loud, then tap to see and hear it and mark yourself. Overrides Type.</div>
+      </div>
+      <div class="toggle"></div>
+    </div>
+    <button class="start-btn" id="verb-drill-btn" onclick="drillSelectedVerbs()" disabled>Pick some verbs to drill</button>
+  </div>
+
+  <!-- Numbers screen (2026-10-11) - see NUMBERS & TIMES in the script. -->
+  <div class="screen" id="screen-numbers">
+    <div class="settings-title">Numbers</div>
+    <div class="settings-sub">Random numbers and times to read, new every round, and look-ups for any number or time.</div>
+    <div class="level-filter-row">
+      <button class="level-pill" id="numbers-section-pill-times" onclick="setNumbersSection('times')">Times</button>
+      <button class="level-pill" id="numbers-section-pill-numbers" onclick="setNumbersSection('numbers')">Numbers</button>
+    </div>
+
+    <div class="numbers-section" id="numbers-section-times">
+      <div class="group-card cat-tile" onclick="startTimeChallenge()" style="cursor:pointer;">
+        <div class="cat-tile-top cat-tile-top-stack">
+          <div class="group-name">Reading times</div>
+          <div class="random-choice-desc">10 random times per round - everyday (às duas e meia da tarde) and timetable (às catorze e trinta), with at / until / from / around</div>
+        </div>
+        <div class="cat-bar" id="times-score-swatch"></div>
+      </div>
+      <div class="group-card say-card" id="numbers-say-card" onclick="toggleNumbersSay()" style="cursor:pointer;">
+        <div class="group-info">
+          <div class="group-name">Say it out loud</div>
+          <div class="group-count">Say the number or time, then tap to see and hear it and mark yourself</div>
+        </div>
+        <div class="toggle"></div>
+      </div>
+      <div class="section-divider"></div>
+      <div class="group-card tool-card">
+        <div class="group-info">
+          <div class="group-name">Specific time</div>
+          <div class="group-count">Pick a time to see how it's said</div>
+        </div>
+        <div class="level-filter-row tool-pills">
+          <button class="level-pill" id="time-tool-style-everyday" onclick="setTimeToolStyle('everyday')">Everyday</button>
+          <button class="level-pill" id="time-tool-style-timetable" onclick="setTimeToolStyle('timetable')">Timetable</button>
+        </div>
+        <div class="time-tool-entry">
+          <select id="time-tool-hour" onchange="updateTimeTool()"></select><span>:</span><select id="time-tool-minute" onchange="updateTimeTool()"></select>
+          <button class="time-tool-reset-btn" onclick="resetTimeToolToNow()" title="Now" aria-label="Reset to now">↺</button>
+        </div>
+        <div class="level-filter-row tool-pills">
+          <button class="level-pill" id="time-tool-frame-at" onclick="setTimeToolFrame('at')">at</button>
+          <button class="level-pill" id="time-tool-frame-until" onclick="setTimeToolFrame('until')">until</button>
+          <button class="level-pill" id="time-tool-frame-from" onclick="setTimeToolFrame('from')">from</button>
+          <button class="level-pill" id="time-tool-frame-around" onclick="setTimeToolFrame('around')">around</button>
+        </div>
+        <div class="tool-output" id="time-tool-output"></div>
+      </div>
+    </div>
+
+    <div class="numbers-section" id="numbers-section-numbers">
+      <div class="group-card cat-tile" onclick="startNumberChallenge()" style="cursor:pointer;">
+        <div class="cat-tile-top cat-tile-top-stack">
+          <div class="group-name">Reading numbers</div>
+          <div class="random-choice-desc">10 random numbers per round, from 0 to 99 999</div>
+        </div>
+        <div class="cat-bar" id="numbers-score-swatch"></div>
+      </div>
+      <div class="group-card say-card" id="numbers-say-card-2" onclick="toggleNumbersSay()" style="cursor:pointer;">
+        <div class="group-info">
+          <div class="group-name">Say it out loud</div>
+          <div class="group-count">Say the number or time, then tap to see and hear it and mark yourself</div>
+        </div>
+        <div class="toggle"></div>
+      </div>
+      <div class="section-divider"></div>
+      <div class="group-card tool-card">
+        <div class="group-info">
+          <div class="group-name">Specific number</div>
+          <div class="group-count">Type a number to see how it's said - up to 999 999</div>
+        </div>
+        <input class="tool-input" id="number-tool-input" type="number" inputmode="numeric" min="0" max="999999" step="1" placeholder="0" oninput="updateNumberTool()">
+        <div class="tool-output" id="number-tool-output"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grammar screen (2026-10-11) -->
+  <!-- DESK SHEETS (2026-10-15, from the Japanese app): three printable A4
+       landscape pages - the sentence order across the top, word cards under
+       each slot. See buildDeskSheets(). -->
+  <div class="screen" id="screen-desk-sheets">
+    <div class="ds-toolbar">
+      <div class="settings-title">Desk sheets</div>
+      <div class="settings-sub">Pages to keep in front of you when you want to make up sentences of your own: pick a word from each column and put the sentence together, so your effort goes on the sentence, not on finding words. Shuffle for a different selection, then print or save as a PDF (A4, landscape). Phones sometimes start in portrait: switch to landscape in the print options.</div>
+      <div class="ds-buttons">
+        <button type="button" class="ds-btn" onclick="buildDeskSheets()">Shuffle words</button>
+        <button type="button" class="ds-btn ds-btn-main" onclick="window.print()">Print / save PDF</button>
+      </div>
+    </div>
+    <div class="ds-scroll"><div id="desk-sheets"></div></div>
+  </div>
+
+  <!-- FRASES (2026-10-24): the sentence tab - building your own sentences.
+       The builder and challenge share one screen (screen-sb); part scores,
+       the example sentence and the desk sheets live here too. -->
+  <div class="screen" id="screen-build">
+    <div class="settings-title">Sentences</div>
+    <div class="settings-sub">Put sentences together yourself: pick a word from each column and the sentence builds as you go.</div>
+    <div class="group-card cat-tile" onclick="showSentenceBuilder(false)" style="cursor:pointer;">
+      <div class="cat-tile-top cat-tile-top-stack">
+        <div class="group-name">Sentence builder</div>
+        <div class="random-choice-desc">One card from each column, and pick the verb form yourself; the English follows along. Doing, Going, and Being - ser or estar, and making the describing word agree.</div>
+      </div>
+    </div>
+    <div class="group-card cat-tile" onclick="showSentenceBuilder(true)" style="cursor:pointer;">
+      <div class="cat-tile-top cat-tile-top-stack">
+        <div class="group-name">Sentence challenge</div>
+        <div class="random-choice-desc">An English sentence to build in Portuguese. It's checked part by part, with one more go before the answer. Scored by part, never touching your word greens.</div>
+      </div>
+    </div>
+    <div class="group-card cat-tile" onclick="showSentenceBuilder('reverse')" style="cursor:pointer;">
+      <div class="cat-tile-top cat-tile-top-stack">
+        <div class="group-name">Reading challenge</div>
+        <div class="random-choice-desc">The other way round: a Portuguese sentence to read, and you pick the English for each part - including what the verb form tells you about who and when.</div>
+      </div>
+    </div>
+    <div id="sb-parts-panel"></div>
+    <!-- Example sentences (2026-10-11) - same generator as the greeting card. -->
+    <div class="greet-card greet-sentence grammar-sentence" id="grammar-sentence"></div>
+    <div class="group-card cat-tile" onclick="showDeskSheets()" style="cursor:pointer;">
+      <div class="cat-tile-top cat-tile-top-stack">
+        <div class="group-name">Desk sheets</div>
+        <div class="random-choice-desc">Printable pages of words to build your own sentences from: pick one from each column</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-sb">
+    <div class="sb-head">
+      <div class="settings-title" id="sb-title">Sentence builder</div>
+      <div class="level-filter-row" id="sb-mode-row">
+        <button type="button" class="level-pill" data-mode="do" onclick="sbSetMode('do')">Doing</button>
+        <button type="button" class="level-pill" data-mode="go" onclick="sbSetMode('go')">Going</button>
+        <button type="button" class="level-pill" data-mode="give" onclick="sbSetMode('give')">Giving</button>
+        <button type="button" class="level-pill" data-mode="being" onclick="sbSetMode('being')">Being</button>
+      </div>
+    </div>
+    <div class="sb-strip" id="sb-strip"></div>
+    <div class="sb-scroll"><div class="sb-cols" id="sb-cols"></div></div>
+    <div class="sb-tip">Works best with your phone turned sideways. Challenges keep a score for each part of the sentence (on the Sentences page); they never touch your word greens.</div>
+  </div>
+
+  <div class="screen" id="screen-grammar">
+    <div class="settings-title">Grammar</div>
+    <div class="settings-sub">The rules, one card each. Most have a drill at the bottom.</div>
+    <div class="group-card cat-tile" onclick="startContractionDrill('grammar')" style="cursor:pointer;">
+      <div class="cat-tile-top cat-tile-top-stack">
+        <div class="group-name">Contractions drill</div>
+        <div class="random-choice-desc">no, na, do, ao, pelo… filled into real sentences</div>
+      </div>
+      <div class="cat-bar" id="contraction-swatch"></div>
+    </div>
+    <div class="group-card" id="grammar-type-card" onclick="toggleGrammarType()" style="cursor:pointer;">
+      <div class="group-info">
+        <div class="group-name">Type the answer instead of choosing</div>
+        <div class="group-count">For the contractions and verb drills</div>
+      </div>
+      <div class="toggle"></div>
+    </div>
+    <div class="group-card say-card" id="grammar-say-card" onclick="toggleGrammarSay()" style="cursor:pointer;">
+      <div class="group-info">
+        <div class="group-name">Say it out loud</div>
+        <div class="group-count">For the contractions and verb drills - say it, then check and mark yourself. Overrides Type.</div>
+      </div>
+      <div class="toggle"></div>
+    </div>
+    <div class="section-divider"></div>
+    <div id="grammar-note-list"></div>
+    <!-- Tables (2026-11-05): the pattern tables in one place. ptTables(). -->
+    <div class="section-divider"></div>
+    <div class="settings-sub grammar-tables-head"><strong>Tables</strong> - the patterns at a glance</div>
+    <div id="grammar-table-list"></div>
+  </div>
+
+  <!-- Grammar note / verb table screen (2026-10-11) -->
+  <div class="screen" id="screen-grammar-note">
+    <div class="settings-title" id="grammar-note-title"></div>
+    <div class="grammar-note" id="grammar-note-body"></div>
+    <button class="start-btn" id="grammar-note-drill-btn" style="display:none;">Drill</button>
+    <button class="btn-secondary" onclick="navBack()">← Back</button>
+  </div>
+
+  <!-- Vocab reference screen (browse-only, no drilling) -->
+  <div class="screen" id="screen-vocab-reference">
+    <div class="settings-title" id="vocab-ref-title">Reference</div>
+    <div class="settings-sub">A quick look — tap Back when you're done.</div>
+    <div id="vocab-ref-list"></div>
+    <button class="btn-secondary" onclick="navBack()">← Back</button>
+  </div>
+
+  <!-- Match game screen -->
+
+</main>
+
+<!-- The course vocabulary (2026-10-08) - must load before the app script below. -->
+<!-- ?v= matches the version in Settings (2026-10-11): a new page always
+     fetches the data files that go with it, never an older cached copy -
+     bump it together with the footer version and sw.js CACHE_VERSION.
+     (Four places now: vocab.js, grammar.js, lang/pt.js and app.js.) -->
+<script src="vocab.js?v=261105.001"></script>
+<!-- Verbs, contractions and grammar notes (2026-10-11). -->
+<script src="grammar.js?v=261105.001"></script>
+<!-- The language module (2026-11-06): Portuguese rules - numbers and times so
+     far - as a JavaScript module, handed to the app as window.LANG. Module
+     scripts and "defer" scripts run in page order once the page has loaded,
+     so this always runs before app.js below. -->
+<script type="module">
+import pt from './lang/pt.js?v=261105.001';
+window.LANG = pt;
+</script>
+<!-- The app (2026-11-06: moved out of this page into app.js). -->
+<script defer src="app.js?v=261105.001"></script>
+</body>
+</html>

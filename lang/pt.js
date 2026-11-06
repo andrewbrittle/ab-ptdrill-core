@@ -8,8 +8,8 @@
 //
 // Step 3 of the plan (2026-11-06): numbers and times. Moved here unchanged
 // from the app; the golden outputs check they still say exactly the same.
-// Conjugation, joins (a + o = ao), agreement and typed-answer comparison
-// follow in later steps.
+// Step 4: typed-answer comparison. Conjugation, joins (a + o = ao) and
+// agreement follow in later steps.
 
 const UNITS = ['zero', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez',
   'onze', 'doze', 'treze', 'catorze', 'quinze', 'dezasseis', 'dezassete', 'dezoito', 'dezanove'];
@@ -111,6 +111,54 @@ function timeToWords(h24, m, frame, style) {
   return lead + ' ' + core;
 }
 
+// ---------- Typed answers ----------
+// Marking rules (2026-10-10, moved here 2026-11-06):
+//  - case, extra spaces and end punctuation never matter
+//  - the word, any listed alternative (alt), or any part of an "a / b"
+//    entry counts; the Brazilian form counts too, with a note
+//  - a noun typed without its article (comboio for o comboio) counts, with a
+//    reminder - the article is how the gender is learnt
+//  - right letters, wrong or missing accents: counts with a reminder (the app
+//    gives half the usual confidence boost, or marks it wrong when Settings >
+//    "Accents must be right" is on)
+//  - right noun, wrong article (a comboio): wrong, but the app says so
+const ARTICLE_RE = /^(o|a|os|as)\s+/;
+function normalise(str) {
+  return (str || '').normalize('NFC').toLowerCase()
+    .replace(/[’‘`´]/g, "'")
+    .replace(/[.!?¡¿,;:…]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function stripAccents(str) {
+  return str.normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+// accepted: [{ form, kind }] already normalised; given: what was typed.
+// Returns { match: { kind, accentSlip, noArticle, form } | null,
+//           wrongArticle: the accepted form | null }.
+function compareTyped(accepted, given) {
+  const typed = normalise(given);
+  let match = null;
+  if (typed) {
+    for (const f of accepted) {
+      const bare = f.form.replace(ARTICLE_RE, '');
+      const candidates = [[f.form, false], [bare, bare !== f.form]];
+      for (const [cand, noArticle] of candidates) {
+        if (typed === cand) { match = { kind: f.kind, accentSlip: false, noArticle, form: f.form }; break; }
+        if (!match && stripAccents(typed) === stripAccents(cand)) match = { kind: f.kind, accentSlip: true, noArticle, form: f.form };
+      }
+      if (match && !match.accentSlip) break;
+    }
+  }
+  let wrongArticle = null;
+  if (!match && ARTICLE_RE.test(typed)) {
+    const typedBare = stripAccents(typed.replace(ARTICLE_RE, ''));
+    const f = accepted.find(f => ARTICLE_RE.test(f.form) && stripAccents(f.form.replace(ARTICLE_RE, '')) === typedBare);
+    if (f) wrongArticle = f.form;
+  }
+  return { match, wrongArticle };
+}
+
 export default {
   code: 'pt-PT',
   numberToWords,       // 0-999 999: "mil duzentos e cinquenta"
@@ -119,4 +167,6 @@ export default {
   formatNumber,        // digits as written in Portugal: 10 000
   timeToWords,         // (h24, m, frame, style): "às duas e dez da tarde"
   minuteWords,         // "um quarto", "meia", "vinte" (used by ptClock)
+  normalise,           // lower case, no end punctuation, accents kept
+  compareTyped,        // (accepted forms, typed): accent slips, missing or wrong article
 };

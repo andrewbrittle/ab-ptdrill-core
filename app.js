@@ -2997,7 +2997,7 @@ function renderQuestion() {
   }
 
   if (mode === 'type' || mode === 'dictation') {
-    renderTypeAnswerInput(container, 'type the Portuguese…', raw => chooseTypedPortuguese(raw, q));
+    renderTypeAnswerInput(container, 'type the Portuguese…', raw => chooseTypedAnswer(raw, q));
     return;
   }
   const field = askPortuguese ? 'jp' : 'en';
@@ -3056,33 +3056,19 @@ function choose(btn, selectedVal, answer, char) {
   finishAnswer();
 }
 
-// ---------- Typed Portuguese -------------------------------------------------
-// Marking rules (2026-10-10):
-//  - case, extra spaces and end punctuation never matter
-//  - the word, any listed alternative (alt), or any part of an "a / b"
-//    entry counts; the Brazilian form counts too, with a note
-//  - a noun typed without its article (comboio for o comboio) counts, with a
-//    reminder - the article is how the gender is learnt
-//  - right letters, wrong or missing accents: counts with a reminder and
-//    half the usual confidence boost, unless Settings > "Accents must be
-//    right" is on, when it's marked wrong
-const PT_ARTICLE_RE = /^(o|a|os|as)\s+/;
-function normalisePortuguese(str) {
-  return (str || '').normalize('NFC').toLowerCase()
-    .replace(/[’‘`´]/g, "'")
-    .replace(/[.!?¡¿,;:…]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-function stripAccents(str) {
-  return str.normalize('NFD').replace(/[̀-ͯ]/g, '');
-}
-function acceptedPortugueseForms(q) {
+// ---------- Typed answers ----------------------------------------------------
+// How a typed answer is compared is the language's business (LANG.normalise,
+// LANG.compareTyped - for Portuguese: case, punctuation, accents, the article,
+// the Brazilian form; see lang/pt.js). What the learner then sees, and how
+// the score moves, is the same for every language and stays here.
+// The forms a question accepts: the answer, any "a / b" part, alternatives,
+// and the Brazilian form (which counts, with a note).
+function acceptedForms(q) {
   const forms = [];
   const add = (s, kind) => {
     if (!s) return;
     String(s).split(/\s*\/\s*/).forEach(part => {
-      const n = normalisePortuguese(part);
+      const n = LANG.normalise(part);
       if (n) forms.push({ form: n, kind });
     });
   };
@@ -3091,34 +3077,16 @@ function acceptedPortugueseForms(q) {
   add(q.br, 'brazil');
   return forms;
 }
-function chooseTypedPortuguese(rawInput, q) {
+function chooseTypedAnswer(rawInput, q) {
   if (answered) return;
   answered = true;
   const input = document.getElementById('type-answer-input');
   const submitBtn = document.getElementById('type-answer-submit');
   if (input) input.disabled = true;
   if (submitBtn) submitBtn.disabled = true;
-  const typed = normalisePortuguese(rawInput);
-  let match = null; // { kind, accentSlip, noArticle, form }
-  if (typed) {
-    for (const f of acceptedPortugueseForms(q)) {
-      const bare = f.form.replace(PT_ARTICLE_RE, '');
-      const candidates = [[f.form, false], [bare, bare !== f.form]];
-      for (const [cand, noArticle] of candidates) {
-        if (typed === cand) { match = { kind: f.kind, accentSlip: false, noArticle, form: f.form }; break; }
-        if (!match && stripAccents(typed) === stripAccents(cand)) match = { kind: f.kind, accentSlip: true, noArticle, form: f.form };
-      }
-      if (match && !match.accentSlip) break;
-    }
-  }
-  // Right noun, wrong article (a comboio): still wrong - the article is the
-  // gender - but say so, rather than a bare "not quite".
-  let wrongArticle = null;
-  if (!match && PT_ARTICLE_RE.test(typed)) {
-    const typedBare = stripAccents(typed.replace(PT_ARTICLE_RE, ''));
-    const f = acceptedPortugueseForms(q).find(f => PT_ARTICLE_RE.test(f.form) && stripAccents(f.form.replace(PT_ARTICLE_RE, '')) === typedBare);
-    if (f) wrongArticle = f.form;
-  }
+  // match: { kind, accentSlip, noArticle, form } or null; wrongArticle: the
+  // form with the right article, when only the article was wrong.
+  const { match, wrongArticle } = LANG.compareTyped(acceptedForms(q), rawInput);
   const strict = !!appSettings.strictAccents;
   const isCorrect = !!match && !(match.accentSlip && strict);
   if (input) input.classList.add(isCorrect ? 'correct' : 'wrong');
@@ -3828,7 +3796,7 @@ function renderGrammarQuestion(q, charDisplay, container, promptEl) {
     return;
   }
   if (answerMode === 'type') {
-    renderTypeAnswerInput(container, 'type the form…', raw => chooseTypedPortuguese(raw, q));
+    renderTypeAnswerInput(container, 'type the form…', raw => chooseTypedAnswer(raw, q));
     return;
   }
   container.classList.toggle('long-options', q.disp === 'time' || q.disp === 'number');

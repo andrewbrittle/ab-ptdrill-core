@@ -1114,7 +1114,7 @@
       <div class="backup-status-msg" id="private-vocab-msg"></div>
     </div>
 
-    <div style="text-align:center; font-size:12px; font-weight:600; color:var(--text-dim); margin-top:0.75rem;">v261105.001</div>
+    <div style="text-align:center; font-size:12px; font-weight:600; color:var(--text-dim); margin-top:0.75rem;">v261105.001 · test 2611062350</div>
   </div>
 
 
@@ -1597,18 +1597,18 @@
      fetches the data files that go with it, never an older cached copy -
      bump it together with the footer version and sw.js CACHE_VERSION.
      (Four places now: vocab.js, grammar.js, lang/pt.js and app.js.) -->
-<script src="vocab.js?v=261105.001-2611062339"></script>
+<script src="vocab.js?v=261105.001-2611062350"></script>
 <!-- Verbs, contractions and grammar notes (2026-10-11). -->
-<script src="grammar.js?v=261105.001-2611062339"></script>
+<script src="grammar.js?v=261105.001-2611062350"></script>
 <!-- The language module (2026-11-06): Portuguese rules - numbers and times so
      far - as a JavaScript module, handed to the app as window.LANG. Module
      scripts and "defer" scripts run in page order once the page has loaded,
      so this always runs before app.js below. -->
 <script type="module">
-import pt from './lang/pt.js?v=261105.001-2611062339';
+import pt from './lang/pt.js?v=261105.001-2611062350';
 window.LANG = pt;
 </script>
 <!-- The app (2026-11-06: moved out of this page into app.js). -->
-<script defer src="app.js?v=261105.001-2611062339"></script>
+<script defer src="app.js?v=261105.001-2611062350"></script>
 </body>
 </html>

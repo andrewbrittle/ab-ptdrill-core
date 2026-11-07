@@ -2246,7 +2246,7 @@ function tryRestoreDrillSession() {
 }
 
 function isTrackedItem(q) {
-  return !!(q && (q.disp === 'word' || q.disp === 'verb' || q.disp === 'contraction' || q.disp === 'number' || q.disp === 'time' || q.disp === 'sound'));
+  return !!questionType(q);
 }
 
 // Kana characters always mean the same sound, so the character itself is a
@@ -2269,7 +2269,7 @@ function recordKanaResult(q, correct, halfCredit, production) {
   if (!isTrackedItem(q)) return;
   if (production && !correct) return;
   const key = getScoreKey(q);
-  const isConsistencyItem = (q.disp === 'number' || q.disp === 'time' || q.disp === 'counter');
+  const isConsistencyItem = questionType(q).scoring === 'consistency';
   // Numbers/time track many sub-answers under one key (numbers-consistency /
   // times-consistency), so they keep their original small symmetric step -
   // the asymmetric kana/kanji/word scoring below doesn't apply to them.
@@ -2901,6 +2901,72 @@ function answerNotesHtml(q) {
   return html;
 }
 
+// ---------- Question types (2026-11-06) ------------------------------------
+// Each kind of question is one object, registered here; the drill screen
+// asks the question's type what to do and never checks which kind it has.
+// Adding a kind of question means adding one object.
+//   id           the question's disp value ('word', 'verb', ...)
+//   badge        label above the question (words show their category instead)
+//   scoring      'item': its own score, steps up 0.5, down 0.75
+//                'consistency': many answers share one score (numbers,
+//                times), so small even steps of 0.1
+//   render(q, ui)  draw the prompt and the ways to answer;
+//                ui = { charDisplay, container, promptEl, mode }
+//   prompt(q, charDisplay, promptEl)  for the grammar-style types: just the
+//                prompt (renderGrammarQuestion draws the answers)
+//   reveal(q)    after any answer: fill the gap, show both sounds...
+//   namesWord    a forward answer also names the Portuguese word
+//   longOptions  answers are long, so the options take the full width
+const QUESTION_TYPES = {};
+function registerQuestionType(t) { QUESTION_TYPES[t.id] = t; }
+function questionType(q) { return (q && QUESTION_TYPES[q.disp]) || null; }
+function revealQuestion(q) { const t = questionType(q); if (t && t.reveal) t.reveal(q); }
+
+registerQuestionType({
+  id: 'word', scoring: 'item', namesWord: true,
+  render: (q, ui) => renderWordQuestion(q, ui),
+});
+registerQuestionType({
+  id: 'sound', badge: 'Sounds alike', scoring: 'item',
+  render: (q, ui) => renderSoundQuestion(q, ui.charDisplay, ui.container),
+  reveal: () => revealSoundPair(),
+});
+registerQuestionType({
+  id: 'verb', badge: 'Verbs', scoring: 'item',
+  render: (q, ui) => renderGrammarQuestion(q, ui.charDisplay, ui.container, ui.promptEl),
+  prompt: (q, charDisplay, promptEl) => {
+    charDisplay.style.fontSize = promptFontSize(q.char);
+    charDisplay.textContent = q.char;
+    promptEl.innerHTML = `<b>${escapeHtmlText(q.tenseLabel)}</b> — “${escapeHtmlText(q.answerEn)}”`;
+  },
+});
+registerQuestionType({
+  id: 'contraction', badge: 'Contractions', scoring: 'item',
+  render: (q, ui) => renderGrammarQuestion(q, ui.charDisplay, ui.container, ui.promptEl),
+  prompt: (q, charDisplay, promptEl) => {
+    charDisplay.style.fontSize = q.char.length <= 22 ? '30px' : '24px';
+    charDisplay.innerHTML = escapeHtmlText(q.char).replace('___', '<span class="pt-blank">___</span>');
+    promptEl.innerHTML = `<b>${escapeHtmlText(q.parts)}</b> — “${escapeHtmlText(q.answerEn)}”`;
+  },
+  reveal: q => fillContractionBlank(q),
+});
+// Numbers and times: the prompt is the figure, with the question's own line.
+const promptFigure = (q, charDisplay, promptEl) => {
+  charDisplay.style.fontSize = promptFontSize(q.char);
+  charDisplay.textContent = q.char;
+  promptEl.innerHTML = q.promptHtml;
+};
+registerQuestionType({
+  id: 'number', badge: 'Numbers', scoring: 'consistency', longOptions: true,
+  render: (q, ui) => renderGrammarQuestion(q, ui.charDisplay, ui.container, ui.promptEl),
+  prompt: promptFigure,
+});
+registerQuestionType({
+  id: 'time', badge: 'Times', scoring: 'consistency', longOptions: true,
+  render: (q, ui) => renderGrammarQuestion(q, ui.charDisplay, ui.container, ui.promptEl),
+  prompt: promptFigure,
+});
+
 function renderQuestion() {
   if (current >= deck.length) { showResults(); return; }
   saveDrillSession();
@@ -2960,19 +3026,18 @@ function renderQuestion() {
   container.classList.remove('long-options');
   const promptEl = document.getElementById('q-prompt');
 
-  if (q.disp === 'sound') {
-    badge.textContent = 'Sounds alike';
+  // Anything without a registered type is drawn as a word, as before.
+  const type = questionType(q) || QUESTION_TYPES.word;
+  if (type.badge) {
+    badge.textContent = type.badge;
     if (contextCard) contextCard.style.display = 'none';
-    renderSoundQuestion(q, charDisplay, container);
-    return;
   }
-  if (q.disp === 'verb' || q.disp === 'contraction' || q.disp === 'number' || q.disp === 'time') {
-    badge.textContent = { verb: 'Verbs', contraction: 'Contractions', number: 'Numbers', time: 'Times' }[q.disp];
-    if (contextCard) contextCard.style.display = 'none';
-    renderGrammarQuestion(q, charDisplay, container, promptEl);
-    return;
-  }
+  type.render(q, { charDisplay, container, promptEl, mode });
+}
 
+// A word question: meaning, reversed, typed, listening, dictation or say it.
+function renderWordQuestion(q, ui) {
+  const { charDisplay, container, promptEl, mode } = ui;
   if (mode === 'say') {
     charDisplay.style.fontSize = promptFontSize(q.answerEn);
     charDisplay.textContent = q.answerEn;
@@ -3036,11 +3101,10 @@ function choose(btn, selectedVal, answer, char) {
   const isCorrect = selectedVal === answer;
   recordKanaResult(q, isCorrect);
   revealListenWord(q);
-  if (q.disp === 'sound') revealSoundPair();
+  revealQuestion(q);
   // Forward questions: name the Portuguese word alongside the meaning, so a
   // listening answer still shows what was said.
-  const pair = (q.disp !== 'word' || answer === q.char) ? '' : ` — ${escapeHtmlText(q.char)}`;
-  fillContractionBlank(q);
+  const pair = (!questionType(q).namesWord || answer === q.char) ? '' : ` — ${escapeHtmlText(q.char)}`;
   if (isCorrect) {
     score++;
     btn.classList.add('correct');
@@ -3103,7 +3167,7 @@ function chooseTypedAnswer(rawInput, q) {
 
   recordKanaResult(q, isCorrect, !!(match && match.accentSlip), true);
   revealListenWord(q);
-  fillContractionBlank(q);
+  revealQuestion(q);
   const fb = document.getElementById('q-feedback');
   if (isCorrect) {
     score++;
@@ -3747,7 +3811,7 @@ function renderSayQuestion(q, container, expectText) {
   document.getElementById('say-reveal-btn').onclick = () => revealSayAnswer(q, container, expectText);
 }
 function revealSayAnswer(q, container, expectText) {
-  fillContractionBlank(q);
+  revealQuestion(q);
   // The answer goes above the two marking buttons (inside the options grid),
   // so your eye lands on it before you mark yourself.
   container.innerHTML = `<div class="say-answer-box"><div class="say-answer">${escapeHtmlText(expectText)}</div>` +
@@ -3773,21 +3837,11 @@ function markSayAnswer(q, ok, btn) {
   finishAnswer();
 }
 
-// Called from renderQuestion for disp 'verb' / 'contraction'.
+// The verb, contraction, number and time types draw here: their own prompt,
+// then choice, type it or say it.
 function renderGrammarQuestion(q, charDisplay, container, promptEl) {
-  if (q.disp === 'number' || q.disp === 'time') {
-    charDisplay.style.fontSize = promptFontSize(q.char);
-    charDisplay.textContent = q.char;
-    promptEl.innerHTML = q.promptHtml;
-  } else if (q.disp === 'verb') {
-    charDisplay.style.fontSize = promptFontSize(q.char);
-    charDisplay.textContent = q.char;
-    promptEl.innerHTML = `<b>${escapeHtmlText(q.tenseLabel)}</b> — “${escapeHtmlText(q.answerEn)}”`;
-  } else {
-    charDisplay.style.fontSize = q.char.length <= 22 ? '30px' : '24px';
-    charDisplay.innerHTML = escapeHtmlText(q.char).replace('___', '<span class="pt-blank">___</span>');
-    promptEl.innerHTML = `<b>${escapeHtmlText(q.parts)}</b> — “${escapeHtmlText(q.answerEn)}”`;
-  }
+  const type = questionType(q);
+  type.prompt(q, charDisplay, promptEl);
   // answerMode is fixed on the question when the deck is built (numbers and
   // times); verb / contraction decks follow the switches captured at start.
   const answerMode = q.answerMode || (grammarSayModeActive ? 'say' : grammarTypeModeActive ? 'type' : 'choice');
@@ -3799,7 +3853,7 @@ function renderGrammarQuestion(q, charDisplay, container, promptEl) {
     renderTypeAnswerInput(container, 'type the form…', raw => chooseTypedAnswer(raw, q));
     return;
   }
-  container.classList.toggle('long-options', q.disp === 'time' || q.disp === 'number');
+  container.classList.toggle('long-options', !!type.longOptions);
   q.options.forEach((o, idx) => {
     const btn = document.createElement('button');
     btn.className = 'opt';
@@ -3811,7 +3865,7 @@ function renderGrammarQuestion(q, charDisplay, container, promptEl) {
 }
 // After answering a contraction question, fill the gap in the sentence.
 function fillContractionBlank(q) {
-  if (!q || q.disp !== 'contraction') return;
+  if (!q) return;
   const blank = document.querySelector('#q-char .pt-blank');
   if (blank) { blank.textContent = q.blankText || q.answer; blank.classList.add('filled'); }
 }

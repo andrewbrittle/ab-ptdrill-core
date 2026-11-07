@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/start.js"] = "2611072103";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/start.js"] = "2611072109";
 // Português Drill - The core: starting the app - runs last, once every other file has loaded.
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.
 

@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/starter.js"] = "2611072103";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/starter.js"] = "2611072109";
 // Português Drill - The core: the starter set (2026-11-07).
 //
 // About 100 meanings every language app starts with - hello, exit, the bill,

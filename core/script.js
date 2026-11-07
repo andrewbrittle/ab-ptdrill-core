@@ -1,4 +1,3 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/script.js"] = "2611072103";
 // Português Drill - The core: learning to read a script (2026-11-07, on the
 // cyrillic branch). Shared by any language with letters of its own - the
 // Bulgarian Cyrillic app first, Japanese kana next.

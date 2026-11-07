@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/verbs.js"] = "2611072103";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/verbs.js"] = "2611072109";
 // Português Drill - Portuguese: verbs (endings, irregulars, English prompts), the verb and
 // contraction drills, and the Verbs screen.
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.

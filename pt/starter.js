@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/starter.js"] = "2611072103";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/starter.js"] = "2611072109";
 // Português Drill - Portuguese words for the starter set's meanings
 // (core/starter.js). Each is a word already in vocab.js, written exactly as
 // it is there, so it keeps its own score. Change a word here to choose a

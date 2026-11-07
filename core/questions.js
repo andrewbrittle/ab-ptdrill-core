@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/questions.js"] = "2611070919";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/questions.js"] = "2611071759";
 // Português Drill - The core: the drill screen and its question types - the registry, drawing a
 // question, choice / typed / listening / say-it answers, marking and scoring.
 // Each kind of question registers itself (word, number and time here; the
@@ -375,12 +375,9 @@ function setMatchLevel(level) {
   const randomPill = document.getElementById('level-pill-random');
   if (randomPill) randomPill.classList.toggle('active', level === 'random');
   document.getElementById('vocab-level-filter-row').classList.toggle('showing-theme-colours', level === 'theme');
-  // Andrew mode and Untaught vocabulary both deliberately reuse the same
-  // generic Level 1/2 list view (match-vocab-view + buildMatchCategoryList)
-  // rather than getting their own dedicated view like Collections has - so
-  // a new category just needs level:'andrew' or level:'untaught' in VOCAB
-  // and shows up automatically, no hand-built card needed. Genki (2026-09-12)
-  // joins the same list for the same reason.
+    // Extra tiers of vocabulary (the Japanese app's Untaught and Andrew lists)
+    // reuse this same generic list view: a category with the right level in
+    // VOCAB shows up automatically, no hand-built card needed.
   document.getElementById('match-vocab-view').style.display = SECTION_KEYS.includes(level) ? 'flex' : 'none';
   document.getElementById('match-theme-view').style.display = level === 'theme' ? 'flex' : 'none';
   document.getElementById('match-random-view').style.display = level === 'random' ? 'flex' : 'none';
@@ -476,9 +473,7 @@ function buildMatchCategoryList() {
 
 
 // Where the vocab-reference screen's Back button returns to - reference
-// screens get opened from several different places (Vocab > L2, and now the
-// Hiragana/Katakana selection screens), so this can't be hardcoded the way
-// it used to be (always straight back to Vocab settings).
+// screens can be opened from more than one place, so this can't be hardcoded.
 let vocabRefBackTarget = 'match-settings';
 function closeVocabReference() {
   // 'grammar-notes-hub' isn't a real screen id - it means "back to the
@@ -633,8 +628,7 @@ function buildVocabReadingDeck(items, groupKey, distractorPool) {
   return pool.map(item => buildWordQuestion(item, pickFrom, groupKey));
 }
 
-// One word question (Portuguese build, 2026-10-10) - the Japanese build had
-// this object literal written out twice (tile selection + random decks).
+// One word question - used by tile selection and the random decks alike.
 // Options carry both sides; renderQuestion decides which side is asked.
 function buildWordQuestion(item, pool, groupKey) {
   const distractorItems = pickDistractorItems(pool, item, 3);
@@ -683,26 +677,18 @@ function getAllVocabPool() {
   return scanVocabByTag([]);
 }
 
-// Mirrors the optional-tier tag checks in itemTierVisible (Untaught/Genki/
-// Andrew, including the Genki-but-already-taught carve-out) but as a fixed
-// rule rather than one that moves with the live Settings toggles - kept
-// manually in sync with itemTierVisible if a new tier is ever added there.
+// Mirrors the optional-tier tag checks in itemTierVisible, but as a fixed
+// rule rather than one that moves with Settings - kept in step with
+// itemTierVisible by hand if a new tier is ever added there.
 function isOptionalTierItem(item) {
   return false;
 }
 
 // "All vocabulary" on the Themes screen is meant to be exactly that - the
-// standard taught course content - regardless of whatever optional tiers
-// happen to be switched on in Settings right now (Andrew, 2026-09-22).
-// Kanji/Andrew/Genki words leaking in here whenever their toggle was on was
-// the actual problem being solved: those already have their own dedicated
-// "random from everything" cards (Kanji's, Untaught's), and a kanji word
-// turning up here is one the new "type the reading" toggle can't reasonably
-// ask for a romaji reading of. Unlike getAllVocabPool above, this doesn't
-// move with the toggles - it's always just the taught pool. (Not applied to
-// getWeakestVocabItems/getUntestedVocabItems below - those are about
-// surfacing YOUR actual weak/untested words, which should include optional-
-// tier content you've genuinely been drilling if you've switched it on.)
+// standard content - regardless of whatever optional tiers happen to be
+// switched on in Settings. (Not applied to getWeakestVocabItems /
+// getUntestedVocabItems below - those are about YOUR weak and untested words,
+// which should include anything you've genuinely been drilling.)
 function getCoreVocabPool() {
   return getAllVocabPool().filter(item => !isOptionalTierItem(item));
 }

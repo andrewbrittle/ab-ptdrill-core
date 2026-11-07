@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/numbers.js"] = "2611070919";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/numbers.js"] = "2611071759";
 // Português Drill - Portuguese: the Números screen - number and time challenges and look-ups
 // (the words themselves come from LANG).
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.

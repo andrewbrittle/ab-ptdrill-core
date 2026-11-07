@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/core.js"] = "2611070919";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/core.js"] = "2611071759";
 // Português Drill - The core: everything the drill apps share - word lists and Groups, tile
 // selection, search, the drill modes, navigation, speech, settings, install
 // card, scores with decay and weighted picking, backup, saved sessions,
@@ -7,20 +7,11 @@
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.
 
 // =============================================================================
-// PORTUGUÊS DRILL (2026-10-10) - built from a copy of the Japanese drill app
-// (L3 build, v261010.002). What was kept: the whole drilling engine - tag
-// queries and Groups, tile selection, confidence scores with decay and
-// weighted picking, the four drill modes, search, settings, backup/restore,
-// private word lists, offline mode. What was removed as Japanese-only:
-// kana and kanji (data, screens, drills), numbers/times/counters/money
-// tools, verb forms, particles, grammar notes, sentence builders, the
-// proverb of the day, and the course levels (L1/L2/L3/Untaught).
-// What changed: the word questions (see DRILL CORE and wordQuestionMode),
-// typed-answer marking (accents/articles/Brazilian forms), the speech voice
-// (pt-PT), storage names (ptDrill… so nothing is shared with the Japanese
-// apps on the same site), and the data adapter (see ADAPTER below).
-// Many older comments further down still describe the Japanese build's
-// history; they're left in where the code they describe is unchanged.
+// The core: everything every drill app shares. It began as the Japanese
+// drill app's engine, copied for Portuguese on 2026-10-10 and separated into
+// core/ in November 2026. Words in the language being learnt are read from
+// item.jp (see ADAPTER); scores are kept under 'jp|en' keys, which stay as
+// they are so saved progress is always found.
 // =============================================================================
 
 // VOCAB lives in vocab.js, loaded by the <script src> just before this one.
@@ -30,14 +21,11 @@ if (!window.PT_DRILL_VOCAB) {
 }
 const VOCAB = window.PT_DRILL_VOCAB;
 
-// ADAPTER (Portuguese build, 2026-10-10). vocab.js writes each word as
+// ADAPTER. vocab.js writes each word as
 //   { pt, en, tags, dateAdded, br?, alt?, note? }
-// but the engine underneath was built for Japanese and reads item.jp (the
-// word in the language being learnt) everywhere - over 100 places. Rather
-// than rename all of those in this first pass, each item gets jp = pt here.
-// This is the clearest single finding of the conversion: the engine's word
-// model is named after Japanese (jp / romaji / en), and a language-neutral
-// version would call these something like word / reading / meaning.
+// and the core reads item.jp for the word in the language being learnt (a
+// name kept from the Japanese engine it grew from). Each item gets jp = pt
+// here, once, so nothing else needs to know.
 function adaptItem(item) {
   if (item.jp === undefined && typeof item.pt === 'string') item.jp = item.pt;
   if (!Array.isArray(item.tags)) item.tags = [];
@@ -51,8 +39,7 @@ Object.keys(VOCAB).forEach(k => VOCAB[k].items.forEach(item => { adaptItem(item)
 // The file is stored in this browser's localStorage and merged into VOCAB
 // here, before anything else reads VOCAB. A pack can only ADD categories -
 // a key that already exists in the app's own data is skipped, never
-// overwritten. Pack categories get privatePack:true and lead the Untaught
-// list (see buildMatchCategoryList). File format:
+// overwritten. Pack categories get privatePack:true. File format:
 //   {"format":"pt-drill-private-vocab","version":1,"name":"…",
 //    "categories":{"vocab-…":{level,label,chars,tagQuery,items:[…]}}}
 // with categories shaped exactly like VOCAB entries.
@@ -118,9 +105,8 @@ function validatePrivateVocabPack(pack) {
 const THEMES = {};
 (window.PT_DRILL_GROUPS || []).forEach(g => { THEMES[g.key] = g; });
 
-// Every source category above is Level 2 or Trip - itemTierVisible
-// below is the single gate that applies to any tier an item's tags
-// might carry, so adding a new tier later needs no change here.
+// itemTierVisible below is the single gate on which items show, so a hidden
+// tier could be added later with no change here.
 //
 // For noSort themes, items come back in the same flat original order as
 // before (unchanged behavior). For grouped themes, each group's categories
@@ -133,12 +119,8 @@ const THEMES = {};
 // string (item just needs that one tag - how every tagQuery so far has
 // worked, e.g. 'weather', 'shopping') or an array of tags, in which case
 // the item needs ALL of them (AND, not OR). The array form is what makes
-// a query like ['L1','places'] work - it picks out only the words that
-// are both a place AND taught at L1, even though 'places' alone is also
-// carried by Trip prep's まち/やすみ and Materials - Shops' 夏季無休, none
-// of which are L1 at all. Built 2026-08-26 specifically so L1/L2
-// categories can flip to tag queries later without any visible change -
-// see the FUTURE DIRECTION note above VOCAB.
+// a query like ['food','shopping'] work - it picks out only the words that
+// carry both.
 // {any:[...]} added 2026-08-27 - OR, item needs ANY ONE of these tags.
 // For Collections that are really just a union of a few whole categories
 // that already have their own topic tag (Transport+UK Places,
@@ -148,7 +130,7 @@ const THEMES = {};
 // different things would be exactly the kind of implicit behavior this
 // file has tried to avoid all session.
 // IMPORTANT: converting a THEMES entry from `groups:[[...],[...]]` to
-// `tagQuery:{any:[...]}` is NOT purely internal the way the L1/L2 AND
+// `tagQuery:{any:[...]}` is NOT purely internal the way the AND
 // flip was. `groups` alphabetizes within each named group and stamps
 // dividerGroup so the UI draws a line between groups (see
 // buildCategoryItems/getThemePool below); tagQuery returns one flat,
@@ -163,7 +145,7 @@ function tagQueryMatches(itemTags, query) {
     // food-type/drink AND taught, for the taught-only Food & drink Group.
     if (query.all && !query.all.every(tag => itemTags.includes(tag))) return false;
     // An entry can be a list of tags (2026-10-07) = one divider group, e.g.
-    // ['occupations', 'occupations-l3'] - same kind of word, different level.
+        // ['occupations', 'occupations-2'] - same kind of word, two tags.
     return query.any.some(entry => (Array.isArray(entry) ? entry : [entry]).some(tag => itemTags.includes(tag)));
   }
   const required = Array.isArray(query) ? query : [query];
@@ -201,9 +183,7 @@ function getThemePool(themeKey) {
   // Tag-query themes - membership isn't a hand-picked list of whole
   // categories (like sources/groups below), it's "every item anywhere that
   // carries this tag", found by scanning every category once. Still respects
-  // itemTierVisible per item, same as buildCategoryItems above - a tagged
-  // untaught item still disappears from a tag pool the moment Untaught is
-  // switched off, same as it would from its own category. This is
+    // itemTierVisible per item, same as buildCategoryItems above. This is
   // deliberately the same membership concept as sources/groups (a named,
   // curated pool of words to drill) just resolved a different way - a word
   // doesn't need to be duplicated or manually added to a category list to
@@ -280,7 +260,7 @@ function getThemePool(themeKey) {
 // every other category. Computed fresh each call rather than pre-sorted by
 // hand in the data - cheap at this scale, and removes the maintenance chore
 // of manually re-alphabetizing VOCAB every time a word gets added or edited
-// (which is exactly how Level 1/2 ended up out of order before).
+// (which is how lists used to end up out of order).
 function sortItemsAlphabetically(items) {
   return items
     .map((item, idx) => ({ item, idx }))
@@ -321,18 +301,13 @@ function resolveVocabCategory(key) {
     //
     // tagQuery here can be a single tag string (as above) or an array of
     // tags required together (AND) - see tagQueryMatches. The array form is
-    // what makes an L1/L2 flip possible: a category can query e.g.
-    // ['L1','places'] instead of just 'places', so it only picks up its own
-    // words even where the topic tag (like 'places') is also shared with
-    // Trip/Andrew content elsewhere.
+        // what lets a category query e.g. ['food','shopping'] instead of just
+        // 'food', so it only picks up its own words where a topic tag is shared.
     //
     // Respects cat.ordinalOrder the same way the includeItems branch below
     // does - Numbers, Days, Months, Days of the month, Time and the zodiac-
     // ordered Animals all carry a taught sequence that alphabetizing would
-    // scramble (found while checking these 6 L1/L2 categories before
-    // trusting this branch for a flip - the unconditional sort below would
-    // have silently reordered them the moment tagQuery was added, exactly
-    // the kind of side effect the flip is supposed to avoid).
+        // scramble.
     if (cat.tagQuery) {
       const items = [];
       Object.keys(VOCAB).forEach(srcKey => {
@@ -346,9 +321,8 @@ function resolveVocabCategory(key) {
     }
     // includeItems lets a category display a word it doesn't actually store -
     // the word stays a single entry, kept in whichever category is its real
-    // home (used for words that exist both as curated Trip prep and as
-    // something genuinely photographed in Materials: the Materials copy is
-    // the one stored copy, Trip references it instead of duplicating it).
+    // home. The reference names the source category and the word's romaji -
+    // the Japanese data's field; Portuguese doesn't use includeItems yet.
     // Resolved fresh here rather than stored, same reasoning as theme pools
     // below - always reflects the current state of the source category.
     // Scoring needs no special handling: progress is keyed by the word's own
@@ -409,9 +383,9 @@ function resolveVocabCategory(key) {
   return THEME_CACHE[key];
 }
 
-// Search across whatever's currently visible (L1/L2 always, Trip/Andrew if
-// switched on - see itemTierVisible) - matches against en and romaji
-// only, deliberately not seenAs: that's incidental sentence context, not
+// Search across whatever's currently visible (see itemTierVisible) - matches
+// against the English, the word and its Brazilian form, deliberately not
+// seenAs: that's incidental sentence context, not
 // vocab that was actually taught or added on purpose, and searching it
 // would surface words by way of unrelated background text. Enter/submit
 // only, not live-as-you-type - a live version would be re-filtering a
@@ -422,7 +396,7 @@ function resolveVocabCategory(key) {
 // data before landing here: a plain substring search for "up" pulled back
 // 20 words, but only 6 were actually about "up" (get up, wake up, line up,
 // drink up, tie up, hold up to) - the other 14 were coincidence, "up"
-// happening to sit inside Spain (supein), soup, occupied, supermarket,
+// happening to sit inside soup, occupied, supermarket,
 // support, and so on, with no connection to the query at all. Splitting
 // each field into words and requiring the query to be the START of one of
 // them fixes that (up no longer matches the middle of "occupied") while
@@ -483,11 +457,9 @@ function submitVocabSearch() {
       const itemWords = vocabSearchWords(item.en).concat(vocabSearchWords(item.jp), vocabSearchWords(item.br));
       const matches = queryWords.every(qw => itemWords.some(iw => iw.startsWith(qw)));
       if (matches) {
-        // Tagged with level/groupKey the same way getThemePool tags pooled
-        // theme items - that's what buildVocabTileGrid keys its L1/2/Trip/
-        // Andrew border colour off (see LEVEL_BORDER_COLORS), so results
-        // pulled from several different categories at once get the same
-        // "which tier is this from" treatment Collections already has.
+                // Tagged with level/groupKey the same way getThemePool tags pooled
+                // theme items, so results from several categories get the same
+                // border colours (see LEVEL_BORDER_COLORS).
         results.push(Object.assign({ level: cat.level || 1, groupKey: catKey }, item));
       }
     });
@@ -523,11 +495,8 @@ function submitVocabSearch() {
 let deck = [], current = 0, score = 0, wrong = 0, hints = 0, answered = false, missed = [];
 let hintUsedThisQuestion = false;
 let lastDeckBuilder = null;
-// DRILL MODES - Portuguese build (2026-10-10).
-// The Japanese build had four switches (highlight meaning / reverse / type /
-// listen) because a Japanese word has three faces: script, reading, meaning.
-// A Portuguese word has two - the word and its meaning - so "highlight the
-// meaning" is gone (forward questions always ask for the English), and:
+// DRILL MODES (2026-10-10). A word has two faces - the word and its
+// meaning - so forward questions always ask for the English, and:
 //   Reverse - see the English, answer in Portuguese
 //   Type    - type the Portuguese yourself. On its own it implies Reverse
 //             (typing English back is free prose and can't be marked
@@ -608,7 +577,7 @@ function syncVocabModeToggles() {
 // known biased shuffle: with 4 answer options the first one (the correct
 // answer, since options are built as [answer, ...distractors]) landed in
 // position 1 about 28% of the time and position 4 only 19%, instead of 25%
-// each - Andrew noticed 6 of 12 correct answers in position 1.
+// each (6 of 12 correct answers were landing in position 1).
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -626,20 +595,9 @@ function escapeHtmlText(str) {
 
 
 // Finds where the drilled word sits inside its own seenAs example sentence,
-// so it can be highlighted - checked against the real data before building
-// this: a plain substring search alone covers about 70% of entries as-is.
-// Most of the rest are verb/adjective conjugation (お買い求めください for
-// 買い求める, 選んで for 選ぶ) - Japanese conjugation only ever changes the
-// tail, the kanji stem stays put, so stripping 1-2 characters off the end
-// and retrying catches most of those too. What's left after that - 〜
-// placeholder words like 〜階ホームです standing in for an already-filled-in
-// number, and the couple of seenAs notes that describe the word rather than
-// quote a sentence containing it (まいばすけっと, 道民) - genuinely has
-// nothing to find, so this returns null and the sentence renders unhighlighted,
-// same as before this existed. Checked separately: every long, hard-to-scan
-// entry (searched by Andrew's own example) matched on the first plain
-// attempt - it's exactly the short entries, easy to read at a glance anyway,
-// where the fallback doesn't land.
+// so it can be highlighted: a plain search first, then (for words whose
+// ending changes in the sentence) the same with the last 1-2 characters
+// dropped. Returns null when it isn't there; the sentence then shows plain.
 function findSeenAsHighlightRange(word, sentence) {
   if (!word || !sentence) return null;
   let idx = sentence.indexOf(word);
@@ -653,11 +611,8 @@ function findSeenAsHighlightRange(word, sentence) {
 }
 
 // Renders a seenAs sentence with the drilled word highlighted where it can
-// be found (see findSeenAsHighlightRange) - splits the plain string into
-// before/match/after around the found range *before* running markSmallKana
-// on each piece separately, so small-kana wrapping (っ/ゃ/ゅ/ょ etc) still
-// happens correctly inside and outside the highlighted span rather than
-// getting confused by HTML already injected into the string.
+// be found (see findSeenAsHighlightRange) - split into before / match / after
+// first, so each piece is escaped and marked separately.
 function renderSeenAsHtml(word, sentence) {
   const range = findSeenAsHighlightRange(word, sentence);
   if (!range) return escapeHtmlText(sentence);
@@ -667,7 +622,7 @@ function renderSeenAsHtml(word, sentence) {
   return escapeHtmlText(before) + '<mark class="seen-as-highlight">' + escapeHtmlText(match) + '</mark>' + escapeHtmlText(after);
 }
 
-// Rough plausibility score between two option strings (romaji or English
+// Rough plausibility score between two option strings (the word or its English,
 // gloss, whichever field is being tested) - same starting letter counts as a
 // strong signal of shared "sound", similar length as a weaker one. Used to
 // bias distractor selection toward options that are actually confusable,
@@ -682,7 +637,7 @@ function distractorSimilarity(candidateVal, correctVal) {
 
 // Picks distractors that are guaranteed distinct from the correct item AND
 // from each other, on whichever field is actually shown/matched for the
-// current drill mode - not just romaji. Without this, two different words
+// current drill mode. Without this, two different words
 // that happen to share an English gloss could produce duplicate visible
 // options, and since both would carry the same dataset.value in meaning
 // mode, tapping either would register as correct.
@@ -690,14 +645,13 @@ function distractorSimilarity(candidateVal, correctVal) {
 // Classmate feedback: pure-random distractors from the whole pool are often
 // so dissimilar (wildly different length or starting sound) that you can
 // eliminate wrong options on sight without actually recognising the word -
-// e.g. the Japanese prompt starts with "ga" and only one of four random
-// romaji options happens to start with "g". Biasing toward more confusable
+// e.g. the word starts with "ga" and only one of four random options
+// happens to start with "g". Biasing toward more confusable
 // candidates (matching first letter/length) forces genuine recognition
 // instead, without pulling in words from outside the existing pool.
 function pickDistractorItems(pool, correctItem, count) {
-  // In reversed mode the options shown are Japanese text, not romaji/English,
-  // regardless of drillByMeaning - that toggle only affects which side is
-  // used as the prompt in reversed mode (see renderQuestion).
+    // In reversed and typed modes the options are words in the language being
+    // learnt; otherwise their English.
   const mode = wordQuestionMode();
   const field = (mode === 'reversed' || mode === 'type') ? 'jp' : 'en';
   const correctVal = correctItem[field];
@@ -731,7 +685,7 @@ function pickDistractorItems(pool, correctItem, count) {
 
 
 // Tile-selection reference for flat vocab categories (Colours, Trip-prep) —
-// no sections/pills needed since these are single unordered lists, unlike kanji.
+// no sections/pills needed since these are single unordered lists.
 let vocabTileCategory = null;
 const vocabTileSelected = {};
 const vocabTileReversedMode = {}; // categoryKey -> boolean, remembered independently per category
@@ -801,26 +755,10 @@ function syncVocabTileModeToggles(categoryKey) {
   if (sayCard) sayCard.classList.toggle('selected', sayOn);
 }
 
-// Maps a category key to the reference screen(s) that belong with it -
-// REFERENCE SCREENS FOLDED IN (2026-08-31). Used to be five separate
-// ".vocab-ref-card" links hand-placed in buildMatchCategoryList, positioned
-// just above their category's own tile in the list - correct, but fragile:
-// the reference card's position had to be kept in sync by hand with wherever
-// its category ended up in the list (a problem the same day's alphabetical-
-// order change would have made worse, since a category's list position now
-// depends on its label rather than being fixed). Andrew's proposal: instead
-// of tying the reference to a position in the list, tie it to the category
-// itself and show it on that category's own tile-selection screen - "tap a
-// word to select it for drilling" screen, reference link included. Applies
-// equally to L2 (four of these five) and Andrew (one) since both route
-// through this same function. Each function here still sets its own
-// vocabRefBackTarget internally (now 'vocab-tile-selection' instead of
-// 'match-settings' - see each function's own definition) so Back returns to
-// the selection screen it was opened from, not the top-level category list -
-// same precedent already used for hiragana/katakana's own reference screens.
-// Portuguese build (2026-10-10): no reference screens yet - the Japanese
-// ones (time units, minute endings, zodiac clock…) were Japanese-only.
-// Mechanism kept: { 'vocab-key': [{ label, fn }] }.
+// Maps a category key to the reference screen(s) shown on its tile-selection
+// screen: { 'vocab-key': [{ label, fn }] }. Each reference function sets its
+// own vocabRefBackTarget so Back returns to that selection screen. The
+// Portuguese app has none yet; the mechanism stays for apps that do.
 const CATEGORY_REFERENCE_LINKS = {};
 
 function showVocabTileSelection(categoryKey) {
@@ -896,37 +834,12 @@ const COLOUR_HUES = {
 // same border-slot handoff the Colours category already does: level colour
 // while unselected, gold once selected.
 //
-// COLOUR BY TAG, NOT BUCKET (2026-08-31): keys were originally `trip`/
-// `andrew`, read straight off the category-level `level` value. Andrew's
-// call: keep the purple/green (they work well), but stop deriving them from
-// which category a word happened to live in and derive them from a real
-// per-item property instead - exactly the `encountered`/`curated` tags
-// added the same day (see the FUTURE DIRECTION entry below for the full
-// reasoning). Same two colours, same split (encountered was `andrew`,
-// curated was `trip`), just tag-sourced now. `1`/`2` are untouched - taught
-// levels aren't part of this change.
-// GENKI COLOUR (2026-09-12): rose/pink (#d1568f) - green was ruled out (too
-// close to both --green/confidence and 'encountered' above), teal had
-// already been tried elsewhere and rejected, red reads as "wrong answer"
-// everywhere else in the app, and yellow either crowds --accent (gold) or
-// runs too bright. Pink was the first hue in the wheel not already claimed
-// by another indicator in this app. Genki's own pill retired 2026-09-28
-// (Lesson 1-1 folded into Untaught instead - see buildMatchCategoryList),
-// but this key stays live: its word tiles are still bordered pink inside
-// their own category screen.
-// LEVEL 3 COLOUR (2026-09-28): brown (#a0684d) - the one hue in
-// COLOUR_HUES not already claimed by another indicator (green/yellow both
-// ruled out above for the same reasons Genki's pick avoided them).
-// Portuguese build: no course levels, so no level-coloured tile borders.
+// Keys are per-item tags (encountered / curated) or course levels (1, 2...).
+// The Portuguese app has no levels, so no level-coloured tile borders.
 const LEVEL_BORDER_COLORS = {};
 
-// Resolves which LEVEL_BORDER_COLORS key applies to a pooled item. Untaught
-// items carry `encountered`/`curated` as a real tag now (not inferred from
-// category/level), so this checks tags first; taught items have neither
-// tag, so this falls through to the old level-based key (1 or 2) exactly as
-// before. Pooled items always carry their own `tags` array intact (see
-// buildCategoryItems - Object.assign spreads the raw VOCAB item over the
-// synthesized level/groupKey fields, so `.tags` survives untouched).
+// Resolves which LEVEL_BORDER_COLORS key applies to a pooled item: its own
+// tags first (encountered / curated), then its level.
 function itemColorKey(item) {
   if (item.tags) {
     if (item.tags.includes('curated')) return 'curated';
@@ -981,11 +894,9 @@ function toggleTileTapToSpeak() {
   buildVocabTileGrid(vocabTileCategory);
   refreshKanaScoreShading('vocab-tile-grid');
 }
-// Speaks the card's kana (or its speakAs override) with a Japanese voice -
-// same settings as the drill's hint button (speakCurrent). Picks a ja voice
-// explicitly where one is listed, since some Android browsers ignore
-// utter.lang alone; if the device has none, says so on the toggle card
-// rather than reading Japanese in an English voice without explanation.
+// Speaks the card's word (or its speakAs override) in the language being
+// learnt - same settings as the drill's hint button (speakCurrent). With no
+// suitable voice on the device, the toggle card says so (see speakTarget).
 function speakVocabTile(item, tileEl) {
   if (!soundAllowed()) return;
   if (tileEl) tileEl.style.borderColor = 'var(--accent)';
@@ -997,17 +908,16 @@ function speakVocabTile(item, tileEl) {
   }
 }
 
-// Latin-script sizing (the Japanese build sized by kana count, where one
-// character is roughly a square em - Portuguese words run about twice as long).
+// Sized by length: Portuguese words run long.
 function tileWordFontSize(word) {
   const len = word.length;
   return len <= 7 ? '22px' : len <= 12 ? '18px' : len <= 20 ? '15px' : '13px';
 }
 // HOLD TO PEEK (2026-10-02) - hold any word card ~half a second and a
-// bubble shows its kana, romaji and English (and, if sound is on, says it);
+// bubble shows the word, a second line and its English (and says it);
 // let go and it disappears. A bubble rather than changing the card text,
 // because the holding finger covers the card. A peek, not a toggle, so the
-// list keeps testing you on the kana. A finger that starts moving is a
+// list keeps testing you. A finger that starts moving is a
 // scroll, which cancels the hold; the click that follows a peek is
 // swallowed so it doesn't also select the card.
 const TILE_PEEK_HOLD_MS = 450;
@@ -1022,8 +932,8 @@ function showTilePeekBubble(tile, item) {
   // Verbs (2026-10-07) get a hint line: slide towards this bubble and let
   // go to open every form (showVerbFormsPopup). The arrow is filled in once
   // the bubble's side is known, since it isn't always above the card.
-  // Portuguese build: the second line (romaji in the Japanese build) shows the
-  // Brazilian form where it differs, then any usage note.
+    // The second line shows the Brazilian form where it differs, then any
+    // usage note.
   const extra = [item.br ? tx('tiles.brazil', { w: escapeHtmlText(item.br) }) : '', item.note ? escapeHtmlText(item.note) : ''].filter(Boolean).join(' · ');
   b.innerHTML = `<div class="peek-jp">${escapeHtmlText(item.jp)}</div>${extra ? `<div class="peek-romaji">${extra}</div>` : ''}<div class="peek-en">${escapeHtmlText(item.en)}</div>`;
   document.body.appendChild(b);
@@ -1145,8 +1055,7 @@ function buildVocabTileGrid(categoryKey) {
     } else if (item.level !== undefined) {
       // Theme-pooled items only - carries the source category's own level.
       // Same 1px weight as every tile's default border, just coloured.
-      // Colour itself comes from itemColorKey (tag-based for untaught,
-      // level-based for taught) - see LEVEL_BORDER_COLORS above.
+            // Colour itself comes from itemColorKey - see LEVEL_BORDER_COLORS.
       if (!isSelected) tile.style.borderColor = LEVEL_BORDER_COLORS[itemColorKey(item)] || '';
     }
     if (isSelected) tile.classList.add('selected');
@@ -1271,7 +1180,7 @@ function toggleRandomVocabTiles() {
 // the one currently active - doubles as the answer to "which mode am I in",
 // without needing to read either label closely.
 // One rule for every word list - topics, Groups and verbs alike (2026-10-16,
-// Andrew: "make all of these categories consistent"): Select all is always
+// "make all of these categories consistent"): Select all is always
 // there; a random pick is offered on top once a list is big enough to want
 // one - 21-30 items: Random 10; over 30: Random 20 (getRandomPickSize). Every
 // button says what it does, with numbers.
@@ -1338,10 +1247,10 @@ function drillVocabTileSelection() {
 
 
 
-// NAVIGATION HISTORY (2026-10-16, from the Japanese app). Every screen
+// NAVIGATION HISTORY (2026-10-16). Every screen
 // change is recorded, so Back - the "← Page" link at the top-left of inner
 // pages, the phone's back gesture, and the cog tapped a second time - goes
-// exactly one step up. The tab pages (Vocab / Verbs / Numbers / Grammar) are
+// exactly one step up. The tab pages (APP.screens with root: true) are
 // roots: arriving at one starts history afresh and Back there does nothing,
 // so the app can't be left by accident. Drill and results are never stepped
 // back INTO (Back goes to where the drill was started), except from Settings.
@@ -1467,11 +1376,6 @@ function goBackToSettings() {
     updateRandomVocabTilesLabel();
   }
   showScreen(lastSettingsScreen);
-}
-
-function tryResume() {
-  if (deck.length > 0 && current < deck.length) showScreen('drill');
-  else goBackToSettings();
 }
 
 
@@ -1638,14 +1542,13 @@ const SETTINGS_KEY = APP.storagePrefix + 'Settings';
 let appSettings = { theme: 'dark', hintPenalty: false, strictAccents: false, workOffline: false, decayAffectsColours: false, lastSeenChangelog: null, tileTapToSpeak: false, soundOn: true };
 
 // WHAT'S NEW FLAG (2026-09-01) - HOW TO ADD AN ENTRY, so this stays
-// consistent across sessions and not just something Andrew has to remember
-// to ask for correctly each time:
+// consistent across sessions:
 //   1. Add a new dated <div class="entry"> block at the TOP of
 //      changelog.html (most recent first), written the way the two
 //      existing entries there are - plain language, what changed and why
 //      someone would care, not an internal diff. Curated, not automatic -
 //      routine fixes/tidying don't get their own line, only things
-//      actually worth telling classmates about.
+//      actually worth telling someone about.
 //   2. Bump LATEST_CHANGELOG_ENTRY below to match that entry's date (or
 //      some other value that changes - the only requirement is that it's
 //      different from whatever it was before). This is the ONLY thing that
@@ -1661,14 +1564,9 @@ const LATEST_CHANGELOG_ENTRY = '2026-11-05a';
 try {
   const savedSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY));
   if (savedSettings && typeof savedSettings === 'object') {
-    // One-time migration: showKanji/showExtra replace the old single
-    // showCustomContent switch (Kanji and Extra vocab used to be gated
-    // together - now they're independent). If this is the first load since
-    // upgrading, savedSettings will have the old key but not the new ones,
-    // so carry its value across to both. Once that's happened, savedSettings
-    // will have showKanji/showExtra of its own from then on (see
-    // saveSettings() below), so this condition never fires again and the
-    // two toggles are free to diverge.
+        // One-time migration from the Japanese app's settings (showCustomContent
+        // became showKanji/showExtra). Harmless here; kept so an older settings
+        // record still loads cleanly.
     Object.assign(appSettings, savedSettings);
   }
 } catch (e) {
@@ -1685,35 +1583,13 @@ function saveSettings() {
 
 // Single source of truth for "is this item's tier currently visible" - used
 // anywhere that scans across every category regardless of level (Random -
-// Everything, theme pools, search), so Untaught and Andrew-mode content
-// stay gated the same way everywhere rather than each call site
-// re-deriving its own version of this check (and risking one of them
-// forgetting a tier).
+// Everything, theme pools, search), so hidden tiers stay hidden the same way
+// everywhere.
 //
-// PER-ITEM, NOT PER-CATEGORY - SHIPPED (2026-08-31): this used to be
-// categoryTierVisible(level), called once per source category to decide
-// whether to skip its `items` entirely. That was always a stand-in for
-// what the words themselves already say about themselves: every untaught
-// item already carries the 'untaught' tag (100% coverage, verified before
-// this shipped), so checking the item's own tag directly is both more
-// accurate and one step closer to THE FLIP point 1 above VOCAB ("level
-// stops being a category-level property and becomes a per-item one").
-// Andrew raised this directly after the Trip/Andrew merge shipped -
-// wanted genuine per-item gating rather than a per-category shortcut that
-// only worked because the data happened to be clean. The "bring forward"
-// half of point 1 (level updating in place when a word's re-taught) turned
-// out not to be a real blocker either, in the same conversation - a word
-// simply gets tagged with both levels (e.g. ['L1','L3']) and the existing
-// tag-query mechanism already finds it in both without any extra work, so
-// there was never a need for level to literally move.
-//
-// 'andrew' is dormant as of 2026-08-31 - no item currently carries that
-// tag (checked: 0/1289), since Andrew mode has no content to gate yet -
-// but the branch stays wired up and ready for whenever L3 content lands
-// here and gets tagged the same way untaught content already is.
-// No hidden tiers in the Portuguese build (the Japanese build hid Untaught,
-// Genki and Andrew-mode words behind settings). Kept as the single gate every
-// vocab scan goes through, so a tier can come back without touching callers.
+// Per item, not per category: each item's own tags decide (the Japanese app
+// hid 'untaught' and 'andrew' words behind settings). The Portuguese app
+// hides nothing; it's kept as the one gate every vocab scan goes through, so
+// a hidden tier could come back without touching callers.
 function itemTierVisible(item) {
   return true;
 }
@@ -1721,13 +1597,8 @@ function itemTierVisible(item) {
 // Walks every VOCAB category once and keeps items matching a tag query -
 // the same scanning shape resolveVocabCategory and getThemePool's tagQuery
 // branches already use, pulled out here so startRandomMatch (below) can
-// reuse it instead of copying the loop a third time. Added 2026-08-27 so
-// "Random - Level 1/2" is a genuine tag query (item has tag 'L1'/'L2')
-// rather than a bucket walk (category's own level property) - the
-// difference matters the moment a word is tagged forward to a later level
-// (e.g. tags:['L1','L3',...]) without moving its physical storage: a tag
-// query finds it in both level's random pools automatically, a bucket walk
-// never would, since the word's home category only has one level stamp.
+// reuse it instead of copying the loop a third time. A tag query finds a
+// word wherever it's stored, which a walk of one category's items wouldn't.
 function scanVocabByTag(query) {
   const items = [];
   Object.keys(VOCAB).forEach(catKey => {
@@ -1748,9 +1619,7 @@ function scanVocabByTag(query) {
 // Searching "mother" (one match) produced a drill card with no wrong
 // options at all - not a search bug, a distractor-pool bug that search
 // happens to expose because it's the only place a category's own item
-// pool can legitimately be smaller than 4. Confirmed identical in the
-// frozen L2 build (same code, untouched there), so this has been present
-// since before the flip - not something the Genki work introduced.
+// pool can legitimately be smaller than 4.
 //
 // Fix: search drilling draws distractors from every visible word instead
 // of just the match set. Normal categories are untouched - they keep using
@@ -1796,7 +1665,7 @@ function toggleHintPenalty() {
 // selection reads), this only decides whether colours read the decayed
 // value or the raw last-measured one. No live re-render of colours already
 // on screen when toggled - same convention as every other display setting
-// here (showKanji, etc.): it takes effect next time that screen renders,
+// here: it takes effect next time that screen renders,
 // not retroactively on the one you're looking at.
 function applyDecayAffectsColoursUI() {
   const card = document.getElementById('decay-colours-toggle-card');
@@ -1840,13 +1709,6 @@ function syncServiceWorkerRegistration() {
   });
 }
 
-function toggleWorkOffline() {
-  appSettings.workOffline = !appSettings.workOffline;
-  saveSettings();
-  applyWorkOfflineUI();
-  syncServiceWorkerRegistration();
-}
-
 function applyStrictAccentsUI() {
   const card = document.getElementById('strict-accents-toggle-card');
   if (card) card.classList.toggle('selected', !!appSettings.strictAccents);
@@ -1867,7 +1729,7 @@ function applyAllSettingsUI() {
   applySettingsButtonUpdateFlag();
 }
 
-// INSTALL CARD (from the Japanese app, 2026-10-14). A browser reports whether
+// INSTALL CARD (2026-10-14). A browser reports whether
 // the page is running as an installed home-screen app (display-mode
 // standalone, or Safari's navigator.standalone). When it isn't, Settings
 // shows how to install for this device. Android / desktop Chrome offer their
@@ -1928,11 +1790,7 @@ function showSettingsScreen() {
   showScreen('settings');
 }
 
-/* ---------- Kana confidence tracking (on-device only, no sync) ---------- */
-// Tracks a -2..+2 score per single kana character, based on right/wrong
-// answers during hiragana/katakana drilling (base/diacritic/youon groups
-// only — not word/number/time/kanji). Shown as tile shading on the
-// reference screens; doesn't affect drilling, scoring, or selection.
+/* ---------- Confidence tracking (on-device only, no sync) ---------- */
 const KANA_SCORE_KEY = APP.storagePrefix + 'KanaScores';
 let kanaScores = {};
 try {
@@ -1967,62 +1825,12 @@ function saveKanaScores() {
   }
 }
 
-// BACKUP/RESTORE - SHIPPED (2026-09-12, see downloadScoresBackup() below
-// for the real implementation). Kept the original plan below as-is for the
-// reasoning trail (why Tier 1 was chosen over live sync, and what Tiers 2/3
-// would look like if this ever gets reopened).
-//
-// BACKUP/RESTORE - DIRECTION SET, NOT YET STARTED (2026-09-05): the debug
-// export box below only solves "copy the JSON off a phone for me to look
-// at" - it was never meant as a real backup path, and isn't one: it's
-// hidden, one-way (no import), and a copy of it left sitting on the same
-// device is no safer than the localStorage it's copying, so it doesn't
-// protect against the actual risk (device lost/wiped/replaced) at all.
-//
-// Andrew's ideal is live cross-device sync via Google Drive/OneDrive, but
-// that's a materially bigger thing than it sounds: real two-way sync means
-// deciding what happens when two devices have both been used offline and
-// then reconnect (whose answers win, or do they merge per-word), plus
-// account auth, plus behaviour before the first sync ever completes. Scoped
-// out for now as disproportionate to the actual problem, not rejected
-// outright - see the tiered plan below, worth revisiting if real cross-
-// device *live* use ever becomes the actual pain point rather than backup.
-//
-// Chosen instead (Tier 1 of a 3-tier plan discussed 2026-09-05): turn this
-// same export box into a real, visible "Back up my progress" button that
-// downloads kanaScores as a dated .json file, plus a matching "Restore from
-// backup" file picker that reads one back in (JSON.parse in a try/catch,
-// a sanity check it looks like a scores object, a confirm() before
-// overwriting - same confirm() pattern already used for the interrupted-
-// session prompt above). No cloud integration in the app at all - the user
-// saves the file wherever they already trust things to survive (their
-// phone's Drive/OneDrive app, email to self), so the app leans on
-// infrastructure that already exists rather than building any. Estimated
-// ~60-80 lines of actual HTML/CSS/JS, touching only this settings card and
-// kanaScores/saveKanaScores() - isolated from drilling, scoring and
-// selection.
-//
-// Rejected-for-now escalations, in case this gets reopened later:
-//   - Tier 2: same download, but via the Web Share API on phones so it
-//     goes straight to the OS share sheet (Drive/OneDrive/Files/Mail)
-//     instead of a plain file download. Small, additive, feature-detected
-//     fallback to Tier 1 - fine to add whenever, not blocked on anything.
-//   - Tier 3: opportunistic one-way push of a snapshot to a fixed file in
-//     the user's Drive whenever scores change and the device is online,
-//     pulled down once on a new device. Deliberately NOT two-way sync -
-//     latest write simply overwrites, no merge/conflict logic needed,
-//     because there's only ever one direction at a time. Real cost isn't
-//     the sync logic (same try/fail-silently shape as everything else
-//     localStorage already does here), it's the one-time setup: an OAuth
-//     client registration and a sign-in step. Would sit behind its own
-//     Settings toggle, default off, same shape as "Work offline" - changes
-//     nothing for anyone who leaves it alone.
-//
-// SHIPPED (2026-09-12) - see the BACKUP/RESTORE comment above appSettings
-// for the original plan; built now because the L3 move is a real, concrete
-// reason rather than a hypothetical one. Replaces the old hidden debug
-// export box outright rather than sitting alongside it - same underlying
-// data, this is just the real version of the same idea.
+// BACKUP/RESTORE (2026-09-12): a dated .json download of every score, and a
+// matching restore with a confirm before it overwrites anything. There's no
+// cloud sync in the app - the file goes wherever you already keep things
+// safe (a phone's Drive app, email to yourself). Two-way sync was considered
+// and left out: two devices used offline would need rules for whose answers
+// win, plus accounts and sign-in.
 //
 // Exports the in-memory kanaScores object, not raw localStorage - the two
 // can briefly disagree (the bare-number-to-{score,lastSeen} migration above
@@ -2242,11 +2050,9 @@ function isTrackedItem(q) {
   return !!questionType(q);
 }
 
-// Kana characters always mean the same sound, so the character itself is a
-// safe score key. A few kanji (火/水/木, etc.) are reused across categories
-// with genuinely different meanings (Tuesday vs fire, for example) — for
-// those, character alone would silently blend two different scores together,
-// so kanji use char+answer as the key instead.
+// The score key: the word and its English together ('jp|en'), so two words
+// spelt alike with different meanings keep separate scores. Other kinds of
+// question give their own key (q.scoreKey).
 function getScoreKey(q) {
   if (q.scoreKey) return q.scoreKey; // verb / contraction cells
   return q.char + '|' + (q.answerEn || q.answer);
@@ -2254,7 +2060,7 @@ function getScoreKey(q) {
 
 // halfCredit (Portuguese build): a typed answer with the right letters but
 // slipped accents - counts, at half the boost, like a hinted answer.
-// production (2026-10-24, from the Japanese app's principle "scoring must
+// production (2026-10-24, the principle "scoring must
 // never punish trying the hard thing"): a typed or said-out-loud answer that
 // misses never lowers the score - a right one still raises it - so the hard
 // modes are never a risk to your greens.
@@ -2265,8 +2071,8 @@ function recordKanaResult(q, correct, halfCredit, production) {
   const isConsistencyItem = questionType(q).scoring === 'consistency';
   // Numbers/time track many sub-answers under one key (numbers-consistency /
   // times-consistency), so they keep their original small symmetric step -
-  // the asymmetric kana/kanji/word scoring below doesn't apply to them.
-  // Kana, kanji and word items are deliberately asymmetric: reaching (and
+    // the asymmetric item scoring below doesn't apply to them.
+    // Everything else is deliberately asymmetric: reaching (and
   // holding) the top of the scale used to be too easy with a flat +/-1 -
   // correct answers now earn less than wrong answers cost, so a single slip
   // takes more than one lucky guess to fully undo.
@@ -2280,7 +2086,7 @@ function recordKanaResult(q, correct, halfCredit, production) {
   const next = correct ? Math.min(2, cur + increment) : Math.max(-2, cur - wrongIncrement);
   // Rounding to 1dp used to be safe when 0.1 was the smallest possible step,
   // but the hint-penalty's 0.05 half-step for numbers/time (and now the 0.25
-  // hint-penalty half-step for kana/kanji/word items) would round straight
+    // hint-penalty half-step for other items) would round straight
   // back up at that precision - 2dp preserves both correctly.
   //
   // lastSeen stamped fresh on every real answer (2026-09-01) - this is the
@@ -2331,7 +2137,7 @@ const CONFIDENCE_BANDS = ['neg3', 'neg2', 'neg1', 'neutral', 'pos1', 'pos2', 'po
 const SCORE_CLASSES = CONFIDENCE_BANDS.map(b => 'score-' + b);
 
 // WEIGHTED RANDOM SELECTION - SHIPPED (2026-09-01): the random-20 drills
-// (buildVocabReadingDeck, buildRandomKanjiPool) used to draw a plain uniform
+// (buildVocabReadingDeck, the verb drills) used to draw a plain uniform
 // shuffle().slice(0, 20) - a word missed five times in a row had exactly the
 // same odds of coming up next round as one answered correctly twenty times
 // straight. The per-item confidence score below already existed (it's the
@@ -2404,8 +2210,8 @@ function weightedSampleWithoutReplacement(items, n, weightFn) {
 //     the right amount of slack, which is what 50 gives. Landed at the
 //     upper end of the range that math suggested (a rough "words needed per
 //     day to keep the whole pool fresh" sanity check put the reasonable
-//     range around 40-65 days for the current ~1293-word pool) rather than
-//     the middle, deliberately - L3 only adds more words to maintain, never
+//     range around 40-65 days for a pool of about 1,300 words) rather than
+//     the middle, deliberately - a growing list only adds words to maintain, never
 //     fewer, so erring toward more slack now ages better than erring toward
 //     less. Easy to retune again once it's been lived with for longer.
 //     Decay represents fading CERTAINTY, not demonstrated
@@ -2439,7 +2245,7 @@ function decayedScore(entry) {
 // decayAffectsColours setting - decayedScore() when it's on, the raw
 // last-measured value when it's off. Drill-selection weight always calls
 // decayedScore() directly instead of this (see buildVocabReadingDeck/
-// buildRandomKanjiPool) - what gets drilled more and what colour gets shown
+// the verb drills) - what gets drilled more and what colour gets shown
 // are two separate questions, and only the second one is a matter of taste.
 function displayScore(entry) {
   if (!entry) return entry;
@@ -2450,25 +2256,6 @@ function kanaScoreClass(key) {
   if (!(key in kanaScores)) return ''; // never drilled — no shading at all
   const band = confidenceBand(displayScore(kanaScores[key]));
   return band ? 'score-' + band : '';
-}
-
-function continuousScoreClass(score) {
-  const band = confidenceBand(score);
-  return band ? 'score-' + band : '';
-}
-
-// Whole-category average, for the category-select cards (Level 1/Level 2/
-// Extra tabs). Never-drilled items are excluded from the average entirely
-// (not counted as neutral/zero) - a category nobody has touched yet should
-// show no shading at all, same convention as kanaScoreClass for single items.
-// Returns null when zero items in the category have been drilled.
-function getCategoryAverageScore(categoryKey) {
-  // Routed through resolveVocabCategory (not raw VOCAB[categoryKey]) so a
-  // category using includeItems gets a swatch that reflects the referenced
-  // word's score too, not just its own stored items.
-  const v = resolveVocabCategory(categoryKey);
-  if (!v) return null;
-  return getItemsAverageScore(v.items);
 }
 
 // Same "never-drilled items excluded, not counted as neutral/zero" average as
@@ -2503,8 +2290,7 @@ function getCategoryBandCounts(items) {
 }
 
 // Untested segment drawn first (when shown), then the seven-way climb from
-// neg3 to pos4 - same left-to-right ordering as the kanji app's own
-// progress bar, for anyone who's used both.
+// neg3 to pos4, left to right.
 const CAT_BAR_BAND_ORDER = ['neg3', 'neg2', 'neg1', 'neutral', 'pos1', 'pos2', 'pos3', 'pos4'];
 
 // Fills in one tile's bar element in place. showUntested is passed in fresh
@@ -2559,19 +2345,12 @@ function setupCatBar(barEl, counts) {
   }
 }
 
-function categoryConfidenceClass(avg) {
-  const band = confidenceBand(avg);
-  return band ? 'cat-conf-' + band : '';
-}
-
-
-const CAT_CONF_CLASSES = CONFIDENCE_BANDS.map(b => 'cat-conf-' + b);
 
 // For the Theme tab's (Collections') static cards - same per-category
 // confidence SPREAD bar as buildCategoryTile's own tiles (2026-09-22),
 // computed over each theme's freshly-computed pool (getThemePool) rather
 // than a single VOCAB category's items, "so it's calculated in a very
-// similar way to the others" per Andrew - just a different item source.
+// similar way to the others" - just a different item source.
 // Topic pills (2026-10-11) - from vocab.js's PT_DRILL_SECTIONS; replaced a
 // single "Topics" pill listing all categories at once.
 const SECTIONS = (window.PT_DRILL_SECTIONS && window.PT_DRILL_SECTIONS.length) ? window.PT_DRILL_SECTIONS : [{ key: 'all', label: tx('sections.topics') }];
@@ -2655,9 +2434,6 @@ function refreshThemeCategorySwatches() {
   // All vocabulary / Weakest 20 / Untested 20 aren't theme-pool-backed (see
   // the comments on those cards), so they're not covered by the
   // data-theme-key loop above and need their own band-count call each.
-  // All kanji moved to screen-kanji-selection (2026-09-22) and no longer
-  // has a bar at all there (styled to match Select all instead - see that
-  // card's own comment), so there's nothing left to refresh for it here.
 }
 
 // Group order (2026-10-07): Latest words always first, then the rest by the
@@ -2692,9 +2468,8 @@ function refreshRandomView() {
   setupCatBar(document.getElementById('theme-weakest-vocab-swatch'), getCategoryBandCounts(getWeakestVocabItems(20)));
   setupCatBar(document.getElementById('theme-untested-vocab-swatch'), getCategoryBandCounts(getUntestedVocabItems()));
   setupCatBar(document.getElementById('theme-sounds-swatch'), getCategoryBandCounts(soundScoreItems()));
-  // How many are still untested, e.g. "(610 of 872)" - from the Japanese
-  // app, 2026-10-15. Counted by score key, so a word listed in two topics
-  // counts once.
+    // How many are still untested, e.g. "(610 of 872)". Counted by score key,
+    // so a word listed in two topics counts once.
   const untestedEl = document.getElementById('untested-count');
   if (untestedEl) {
     const uniq = list => new Set(list.map(i => i.jp + '|' + i.en)).size;
@@ -2733,8 +2508,7 @@ function startSelectedRandom() {
 }
 
 // Re-applies confidence shading to every score-keyed tile in a container
-// (vocab tile grid). Kept from the Japanese build - it was filed with the kana
-// code but is generic.
+// (vocab tile grid).
 function refreshKanaScoreShading(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;

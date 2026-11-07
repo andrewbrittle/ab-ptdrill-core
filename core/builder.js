@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/builder.js"] = "2611070919";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/builder.js"] = "2611071759";
 // Português Drill - The core: the sentence builder, sentence challenge and
 // reading challenge (2026-11-07, refactor step 7 - the mechanics moved here
 // from pt/builder.js, unchanged in behaviour).

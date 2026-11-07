@@ -18,28 +18,16 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  /* Andrew flagged the Collections/Level 1/Level 2/Untaught pill text
-     looking slightly bigger than before, right after the pill row switched
-     from wrapping onto a second line to scrolling horizontally in one line
-     (v260831.015). No font-size anywhere in that row actually changed -
-     this is Android Chrome's automatic "font boosting" (aka text
-     autosizer): a heuristic that inflates rendered text size in a block it
-     judges too narrow for its column, and a nowrap+overflow-x row reads
-     differently to that heuristic than a wrapping one did, which is
-     exactly the kind of layout-triggered, no-CSS-change side effect this
-     symptom points to. Every font-size in this app is already deliberately
-     chosen throughout - there's no reason for the browser to be silently
-     adjusting any of them - so disabled globally here rather than patched
-     just on this one row, since the same heuristic could just as easily
-     surface somewhere else next (the Grammar notes cards' new line-height
-     change is another recent candidate). Standard fix, no visual effect on
-     desktop or on text sizes that were never being boosted anyway. */
+  /* Android Chrome's "font boosting" (text autosizer) inflates text it judges
+     too narrow for its column - it once made the pill row's text look bigger
+     when the row changed from wrapping to scrolling. Every font-size here is
+     chosen deliberately, so it's turned off everywhere. No effect on desktop. */
   html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
   :root {
-    /* Proverb category colours (2026-10-03) - same palette as the Japan trip app's proverb cards. */
+    /* Category colours (2026-10-03). */
     --cat-rose:#D98BA5; --cat-teal:#4FB3A9; --cat-wood:#B98553; --cat-sky:#6FC3D9; --cat-lavender:#B79AE0;
-    /* Sentence order slots 1-7 (2026-10-09) - the proverb colours plus two more. */
+    /* Sentence order slots 1-7 (2026-10-09) - the category colours plus two more. */
     --slot-1:#D98BA5; --slot-2:#6FC3D9; --slot-3:#B79AE0; --slot-4:#4FB3A9; --slot-5:#C99563; --slot-6:#8FCB6B; --slot-7:#E3C468;
     --bg: #0f0f0f;
     --surface: #1a1a1a;
@@ -93,9 +81,7 @@
        the --conf-* swatch fills just above, but boosted opacity so a thin
        stacked-bar segment (buildCategoryTile's per-category spread bar)
        reads clearly at a few px tall, where the pale swatch alphas would
-       wash out. Values carried over as-is from the kanji-cards app's own
-       progress bar, already tuned for exactly this use rather than
-       reinvented here. */
+       wash out. */
     --conf-neg3-bar: rgba(235,87,87,0.92);
     --conf-neg2-bar: rgba(235,87,87,0.68);
     --conf-neg1-bar: rgba(235,87,87,0.42);
@@ -169,9 +155,7 @@
      audit that turned up the pill bug. */
   .app-heading { font-size: 19px; font-weight: 700; letter-spacing: 0.02em; color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   .app-heading span { color: var(--accent); }
-  /* Cancels the rule above for this one span specifically - see the
-     easter-egg comment above triggerSpontaneousProverbs() further down for
-     why it's deliberately not gold/hinted at all. */
+  /* Cancels the rule above for this one span specifically, so it isn't gold. */
   .app-heading .app-heading-tap { color: var(--text); cursor: pointer; }
 
   .app-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -243,12 +227,8 @@
   .screen.visible { display: flex; flex-direction: column; gap: 1rem; }
 
   /* Settings screen. Reused as the reference-page title too (#vocab-ref-title/
-     #vocab-tile-selection-title), which occasionally shows a lone kanji label
-     baked into the title text (e.g. item-counters reference: "つ — general
-     things") - font-family added so that renders in the app's own Japanese
-     font rather than falling through to the system sans-serif stack, same
-     fix as .level-pill below. Short single-line headings either way, so this
-     is safe for the plain-English titles too (same reasoning as .nav-pill). */
+     #vocab-tile-selection-title). font-family set here as on .level-pill, so
+     headings use the app's own font. */
   /* Back (2026-10-16): top-left of every inner page, naming where it goes. */
   .nav-back { align-self: flex-start; background: none; border: none; padding: 2px 0; margin: 0 0 -0.4rem; font: inherit; font-size: 14px; font-weight: 600; color: var(--accent); cursor: pointer; text-align: left; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .nav-back:active { opacity: 0.6; }
@@ -275,9 +255,8 @@
      than left sitting there looking like it still does something. */
   .group-card.disabled { opacity: 0.35; pointer-events: none; cursor: default; }
   /* Visually secondary but still fully clickable - unlike .disabled above,
-     used for settings that currently gate nothing (Andrew mode between
-     experiments) rather than settings that are inert while some other
-     condition holds. */
+     for settings that currently gate nothing, rather than settings that are
+     inert while some other condition holds. */
   .group-card.dimmed .group-name { opacity: 0.6; }
   .group-card.dimmed .group-count { opacity: 0.45; }
   .group-card.emphasis { border-color: var(--accent); }
@@ -307,8 +286,7 @@
      as .score-swatch - a full-card tint was tried first but looked too heavy
      across a long stacked list of categories (the same "too dominating"
      concern the Numbers/Times swatch itself was resized over), so this
-     matches that established boxed pattern instead of the kana-ref-card
-     full-tint one. */
+     matches that established boxed pattern instead of a full tint. */
   .cat-swatch {
     flex: 0 0 auto; width: 48px; height: 48px; border-radius: var(--radius);
     margin-left: 0.75rem; background: var(--surface2);
@@ -321,7 +299,7 @@
      very-good/half very-bad averaging to the same middle colour. Scoped to
      .cat-tile specifically (not .match-card-select generally) so the
      Select-all/Random-20 cards, the Theme tab's static cards, and the "All
-     vocabulary"/"All kanji" swatches - all of which share .match-card-select
+     vocabulary" swatch - all of which share .match-card-select
      but are NOT built by buildCategoryTile - are completely untouched by
      this trial. If it earns its keep, .cat-swatch and its cat-conf-* rules
      above become dead code for these tiles (left in place for now since
@@ -351,7 +329,7 @@
     background: var(--surface2); cursor: pointer;
   }
   .cat-bar .seg { height: 100%; min-width: 3px; }
-  /* Level 1/2 category cards need a flex row (text left, swatch right) to
+  /* Category cards need a flex row (text left, swatch right) to
      hold this - scoped to #match-category-list only so the unrelated
      "Random reading" card (also .match-card-select, but plain stacked text,
      sits just below the list) isn't affected. */
@@ -406,7 +384,6 @@
      via em, so this works the same whether it's a 100px char-display or a
      15px reference row. See escapeHtmlText() in the script for where this
      is applied. */
-  .small-kana { font-size: 0.65em; }
   .alt-form { font-size: 13px; font-weight: 600; color: var(--accent); text-align: center; margin-top: 0.15rem; margin-bottom: 0.5rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   /* Materials-only "seen in context" card (see q-context-card in
      renderQuestion) - a separate card between the main drill card and Next,
@@ -419,11 +396,7 @@
      and it's still the next thing in view after answering, so the feedback
      duplication (formerly .feedback-seen-as) is gone, not just relocated.
      Shown from question-load, not gated on answering - it's real-world
-     context, not the reading, so it's not a spoiler. seenAs text is a real
-     Japanese sentence/sign fragment mixed with its English translation in
-     one string, so that line needs the JP font, not just isolated
-     characters - same treatment as .qneg-example-jp. The location/date and
-     filename lines are Latin-only so they stay on the system font stack. */
+     context, not the answer, so it's not a spoiler. */
   .context-card {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: var(--radius-lg); padding: 1rem 1.25rem; text-align: left;
@@ -461,12 +434,11 @@
   .opt:disabled { cursor: default; }
   .opt .opt-rd { display: block; font-size: 13px; font-weight: 600; opacity: 0.85; }
   /* Answers in Portuguese (reversed vocab, verb forms, contractions, numbers):
-     bold, full colour, sized by length - see optPtSize (from the Japanese
-     app's kana answers, 2026-10-14). */
+     bold, full colour, sized by length - see optPtSize (2026-10-14). */
   .opt .opt-rd.opt-pt { font-weight: 700; opacity: 1; line-height: 1.25; }
   .opt .sound-spelling { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-top: 2px; }
   .opt .sound-spelling:empty { display: none; }
-  /* SENTENCE BUILDER (2026-10-24, from the Japanese app) - the desk-sheet
+  /* SENTENCE BUILDER (2026-10-24) - the desk-sheet
      columns, tappable. */
   #screen-sb { max-width: none; --sbw: 118px; }
   .sb-head { max-width: 640px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
@@ -539,7 +511,7 @@
     .sb-stats { display: none; }
     #screen-sb .sb-head .settings-title { display: none; }
   }
-  /* DESK SHEETS (2026-10-15, from the Japanese app) - on screen the pages
+  /* DESK SHEETS (2026-10-15) - on screen the pages
      scroll sideways; printed, each .ds-page is one A4 landscape sheet. */
   #screen-desk-sheets { max-width: none; }
   .ds-toolbar { max-width: 640px; width: 100%; margin: 0 auto 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
@@ -605,11 +577,11 @@
     font-size: 10px; font-weight: 600; color: var(--text-dim);
     opacity: 0.6; pointer-events: none;
   }
-  /* Typed-answer mode (kana -> romaji only, see toggleTypeAnswerMode) - an
-     alternative to picking from four options: type the reading yourself.
-     Row spans both .options grid columns since it's the only "option" on
-     screen. 16px input font is deliberate - anything smaller triggers an
-     unwanted auto-zoom on focus in iOS Safari. */
+  /* Typed-answer mode (see toggleTypeAnswerMode) - an alternative to picking
+     from four options: type the answer yourself. Row spans both .options grid
+     columns since it's the only "option" on screen. 16px input font is
+     deliberate - anything smaller triggers an unwanted auto-zoom on focus in
+     iOS Safari. */
   .type-answer-row { grid-column: 1 / -1; display: flex; gap: 8px; align-items: stretch; }
   .type-answer-input {
     flex: 1; min-width: 0; padding: 13px 14px; border-radius: var(--radius);
@@ -655,9 +627,8 @@
   }
   .next-btn:hover { border-color: var(--border-hover); background: var(--surface2); }
 
-  /* Wraps speak-btn + romaji-btn side by side - both are hint triggers for
-     the same word, so they read as one control group rather than two
-     unrelated buttons. Individual buttons carry no margin of their own;
+  /* Wraps the hint buttons (speak-btn and friends) side by side, so they read
+     as one control group. Individual buttons carry no margin of their own;
      this row supplies the centring/spacing that .speak-btn used to. */
   .hint-btn-row {
     display: flex; align-items: center; justify-content: center;
@@ -811,12 +782,7 @@
        height at all when the label fits on one line, which is still most
        of them. */
     line-height: 1.35;
-    /* Some of these labels embed real kana/kanji directly (e.g. the tense
-       card's いきます/きます/かえります, or the new だれも/どこも/なにも card) -
-       missing font-family here is the exact same bug class as .level-pill
-       had, just not caught in that sweep since it required actually
-       rendering the category list rather than the reference screens
-       themselves. Same fix, same reasoning. */
+    /* font-family set here as on .level-pill, so labels use the app's own font. */
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   }
   .vocab-ref-card:hover { border-color: var(--accent); }
@@ -842,55 +808,37 @@
 
   /* Level filter pills on Match screen */
   .level-filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  /* #vocab-level-filter-row specifically (Collections/Level 1/Level 2/
-     Untaught) - wrapping was fine while every label was short, but
-     "Untaught" is twice the width of the "Trip" pill it replaced, and on a
-     narrow phone (flagged on a Pixel 10 Pro XL) that was enough to tip the
-     last pill onto its own second line by itself, looking broken rather
-     than like a deliberate second row. Scrolls horizontally instead - same
-     fix .nav-pills already uses for the same class of problem - so the row
-     always stays one line and no pill's own text ever wraps either
-     (white-space: nowrap on .level-pill above). Every other row still
-     using the shared .level-filter-row class (hiragana/katakana/numbers/
-     counter pills) is untouched - those can have many more pills and
-     wrapping is still the right behaviour there. */
+  /* #vocab-level-filter-row specifically (Groups / Random / sections / Verbs)
+     scrolls sideways instead of wrapping, so on a narrow phone the last pill
+     never drops onto a line of its own and looks broken - same fix .nav-pills
+     uses. Every other .level-filter-row still wraps. */
   /* Wraps again (2026-10-24): with Verbs added the pills no longer fit one
      phone-width line, and a pill hidden off the edge is easy to miss. */
   #vocab-level-filter-row, #verbs-level-row { flex-wrap: wrap; gap: 6px; }
   #vocab-level-filter-row::-webkit-scrollbar { display: none; }
-  /* Slightly tighter than the shared .level-pill padding (18px sides) -
-     four pills (Collections/Level 1/Level 2/Untaught) were just barely
-     wider than the row on a narrow phone (Pixel 10 Pro XL), enough to
-     read as a rendering mistake rather than an intentional scroll. This
-     plus the row's own tighter 6px gap above reclaims enough width to
-     fit all four without the scroll ever engaging on that size screen.
-     Scoped to this row only - every other .level-filter-row (hiragana/
-     katakana/numbers/counters) keeps the default padding, since those
-     wrap onto multiple lines instead and don't have this problem. */
+  /* Slightly tighter than the shared .level-pill padding (18px sides), so the
+     word-list pills fit a narrow phone (Pixel 10 Pro XL) without scrolling.
+     Scoped to this row only. */
   #vocab-level-filter-row .level-pill, #verbs-level-row .level-pill { padding: 6px 14px; }
   #vocab-level-filter-row .level-pill.level-pill-icon, #verbs-level-row .level-pill.level-pill-icon { padding: 5px 10px; display: inline-flex; align-items: center; justify-content: center; }
   /* Random page (2026-10-07) - single-choice cards, then toggles, then Start */
   #match-random-view .group-card.cat-tile.selected { border-color: var(--accent); }
   .random-choice-desc { font-size: 12px; font-weight: 600; color: var(--text-dim); }
-  /* Search + Andrew mode's shared row - set apart from the main level row
-     above so both read as distinct from the regular Collections/L1/L2/
-     Untaught lineup. The row itself is always visible now (Search is for
-     everyone); the Andrew pill inside it still hides/shows via inline
-     style, same as level-pill-untaught does in the row above. */
+  /* The search row - set apart from the main pill row above. (Its id and
+     class names come from the Japanese app, where it also held a pill for
+     an extra word list.) */
   .level-filter-row.andrew-row { margin-top: 8px; }
   /* Pill-shaped search field - same 99px radius/border language as
      .level-pill, but a text input + submit icon instead of a button. flex:1
-     so it fills the row on its own when the Andrew pill next to it is
-     hidden, and yields space to it once the pill's shown. Border is gold
-     permanently (Andrew's explicit call), not just while focused - unlike
-     every other input in the app, this is meant to read as a standing
+     so it fills the row. Border is gold permanently, not just while focused -
+     unlike every other input in the app, this is meant to read as a standing
      feature of the page, not something that only lights up while in use. */
   .vocab-search-pill {
     flex: 1; min-width: 0; display: flex; align-items: center;
     border: 1px solid var(--accent); border-radius: 99px;
     background: transparent; padding-left: 14px; padding-right: 4px;
   }
-  /* × to clear (from the Japanese app, 2026-10-14) - only while there's text. */
+  /* × to clear (2026-10-14) - only while there's text. */
   .vocab-search-clear {
     flex-shrink: 0; display: flex; align-items: center; justify-content: center;
     width: 24px; height: 24px; border-radius: 50%; border: none;
@@ -915,14 +863,8 @@
      search doesn't make it to the results screen, so this never competes
      with the tile-selection screen's own empty state. */
   .vocab-search-message { font-size: 12.5px; color: var(--text-dim); text-align: center; }
-  /* Font-family was missing here, same bug class as .nav-pill already guards
-     against: without it, kana/kanji pill labels (verb-conj-pills' verb forms,
-     the specific-counter/item-counter unit pills - つ/人/個/本/枚/匹/冊/台/回/歳)
-     fall through to the system sans-serif stack, which on some devices
-     renders kana with the strokes visually joined up instead of as separate
-     characters. Applied to ALL level-pills (not just the Japanese-labelled
-     ones) since BIZ UDPGothic renders Latin text fine too - same call as
-     .nav-pill above. */
+  /* font-family set explicitly, as on .nav-pill: without it a pill falls
+     through to the system font stack. */
   .level-pill {
     padding: 6px 18px; border-radius: 99px; border: 1px solid var(--border);
     background: transparent; color: var(--text-muted);
@@ -932,13 +874,11 @@
   }
   .level-pill.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
   .level-pill:disabled { opacity: 0.35; cursor: default; }
-  /* Ties the Level 1/2/Untaught pill text to the same blue/orange/purple used
-     for theme-tile borders (LEVEL_BORDER_COLORS in the script) - but only
-     while Collections itself is the one being viewed (setMatchLevel toggles
-     "showing-theme-colours" on the row), since the colour only means anything
-     in that context - the rest of the time these pills look like normal
-     unselected pills. :not(.active) so the existing gold .active state still
-     wins once a pill is the one currently selected. */
+  /* Ties level pills' text to the colours used for theme-tile borders
+     (LEVEL_BORDER_COLORS in the script) - but only while Groups is being
+     viewed (setMatchLevel toggles "showing-theme-colours" on the row), since
+     the colour only means anything there. :not(.active) so the gold .active
+     state still wins once a pill is selected. */
 
   #vocab-level-filter-row.showing-theme-colours #level-pill-random:not(.active) { color: var(--green); border-color: rgba(111,207,151,0.4); }
   .latest-range-row { justify-content: center; }
@@ -997,7 +937,7 @@
 <script src="test-errors.js"></script>
 
   <!-- Daily greeting (2026-10-11) - first thing in <body> so it exists before
-       the script below runs (the Japanese build learnt that the hard way). -->
+       the scripts below run. -->
   <div class="greet-overlay" id="greeting-overlay" onclick="if (event.target === this) dismissGreeting();">
     <div class="greet-stack">
       <div class="greet-card">
@@ -1011,10 +951,9 @@
 
 
 <header>
-  <!-- Header (2026-10-24, following the Japanese app): sound and settings up
-       on the heading line; the tabs in Portuguese on their own row, page
-       titles in English. Verbs moved into Palavras (a pill beside Basics /
-       Travel / Life) to make room for Frases, the sentence-building tab. -->
+  <!-- Header (2026-10-24): sound and settings up on the heading line; the
+       tabs in Portuguese on their own row, page titles in English. Verbs is a
+       pill inside Palavras (beside Basics / Travel / Life). -->
   <div class="app-heading-row">
     <div class="app-heading"><span class="app-heading-tap" onclick="showGreeting()">Português</span> <span>drill</span></div>
     <div class="head-btns">
@@ -1046,7 +985,7 @@
       <a href="./changelog.html" target="_blank" id="whats-new-link" style="display:inline-block; font-size:13px; font-weight:600; color:var(--text-muted); text-decoration:none; border:1px solid var(--border); border-radius:99px; padding:8px 18px; background:transparent;" data-t="page.whats-new"></a>
     </div>
 
-    <!-- Install card (from the Japanese app, 2026-10-14): only shown when the
+    <!-- Install card (2026-10-14): only shown when the
          app is open as a web page rather than installed - see refreshInstallCard(). -->
     <div class="group-card install-card" id="install-card" style="display:none;">
       <div class="group-info">
@@ -1115,7 +1054,7 @@
       <div class="backup-status-msg" id="private-vocab-msg"></div>
     </div>
 
-    <div style="text-align:center; font-size:12px; font-weight:600; color:var(--text-dim); margin-top:0.75rem;">v261105.001 · test 2611070919</div>
+    <div style="text-align:center; font-size:12px; font-weight:600; color:var(--text-dim); margin-top:0.75rem;">v261105.001 · test 2611071759</div>
   </div>
 
 
@@ -1132,9 +1071,8 @@
          position in the list by hand. Empty (no children) for categories
          with no reference screen, which collapses to no visible gap. -->
     <div id="vocab-tile-selection-ref-links"></div>
-    <!-- Tap to hear (2026-10-02) - same categories as the romaji view: a
-         panic-button phrasebook where tapping a card speaks it instead of
-         selecting it. Hidden where speech isn't supported. -->
+    <!-- Tap to hear (2026-10-02) - a panic-button phrasebook: tapping a card
+         speaks it instead of selecting it. Hidden where speech isn't supported. -->
     <div class="group-card" id="vocab-tile-speak-card" onclick="toggleTileTapToSpeak()" style="cursor:pointer; display:none;">
       <div class="group-info">
         <div class="group-name" data-t="page.tap-a-card-to-hear-it"></div>
@@ -1169,13 +1107,8 @@
       <div class="toggle"></div>
     </div>
 
-    <!-- Added here directly (2026-09-22, Andrew) - the equivalent global
-         toggle on the L1/L2/Collections index screens already covered every
-         category's drill in practice (renderQuestion reads typeAnswerMode
-         globally, regardless of entry point - see its own comment), but
-         Andrew had no way to find or flip it from inside a category he'd
-         already opened without backing out to the index and scrolling to
-         the bottom of a long list first. Same per-category persistence and
+    <!-- Here as well as on the list screens (2026-09-22), so typing can be
+         switched on from inside a category. Same per-category persistence and
          mutual-exclusion treatment as the two toggles above it - see
          syncVocabTileModeToggles. -->
     <div class="group-card" id="vocab-tile-type-answer-card" onclick="toggleVocabTileTypeAnswerMode()" style="cursor:pointer;">
@@ -1260,9 +1193,8 @@
     <div class="settings-title" data-t="page.vocab"></div>
     <div class="settings-sub" data-t="page.pick-a-word-set-or-tap"></div>
 
-    <!-- Portuguese build: Groups (cross-topic collections, by tag), the
-         random page, and Topics (every category in vocab.js). The Japanese
-         build's L1/L2/L3/Untaught pills were course levels. -->
+    <!-- Groups (cross-topic collections, by tag), the random page, and the
+         topic sections (every category in vocab.js). -->
     <div class="level-filter-row" id="vocab-level-filter-row">
       <button class="level-pill active" id="level-pill-theme" onclick="setMatchLevel('theme')" data-t="page.groups"></button>
       <button class="level-pill level-pill-icon" id="level-pill-random" onclick="setMatchLevel('random')" data-t-attr="title:page.random-drills,aria-label:page.random-drills" ><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"></rect><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"></circle><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"></circle><circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" stroke="none"></circle></svg></button>
@@ -1476,7 +1408,7 @@
   </div>
 
   <!-- Grammar screen (2026-10-11) -->
-  <!-- DESK SHEETS (2026-10-15, from the Japanese app): three printable A4
+  <!-- DESK SHEETS (2026-10-15): three printable A4
        landscape pages - the sentence order across the top, word cards under
        each slot. See buildDeskSheets(). -->
   <div class="screen" id="screen-desk-sheets">
@@ -1599,34 +1531,34 @@
      bump it together with the footer version and sw.js CACHE_VERSION.
      (Every script tag below has one - vocab.js, grammar.js, lang/pt.js,
      and each file in core/ and pt/.) -->
-<script src="vocab.js?v=261105.001-2611070919"></script>
+<script src="vocab.js?v=261105.001-2611071759"></script>
 <!-- Verbs, contractions and grammar notes (2026-10-11). -->
-<script src="grammar.js?v=261105.001-2611070919"></script>
+<script src="grammar.js?v=261105.001-2611071759"></script>
 <!-- The language module (2026-11-06): Portuguese rules - numbers and times so
      far - as a JavaScript module, handed to the app as window.LANG. Module
      scripts and "defer" scripts run in page order once the page has loaded,
      so this always runs before app.js below. -->
 <script type="module">
-import pt from './lang/pt.js?v=261105.001-2611070919';
+import pt from './lang/pt.js?v=261105.001-2611071759';
 window.LANG = pt;
 </script>
 <!-- The app (2026-11-07: split into the shared core and the Portuguese
      features). "defer" scripts run in this order once the page has loaded;
      core/start.js goes last because it starts the app. -->
-<script defer src="ui/en.js?v=261105.001-2611070919"></script>
-<script defer src="core/text.js?v=261105.001-2611070919"></script>
-<script defer src="pt/app.js?v=261105.001-2611070919"></script>
-<script defer src="core/core.js?v=261105.001-2611070919"></script>
-<script defer src="core/questions.js?v=261105.001-2611070919"></script>
-<script defer src="pt/sounds.js?v=261105.001-2611070919"></script>
-<script defer src="pt/verbs.js?v=261105.001-2611070919"></script>
-<script defer src="pt/grammar-screen.js?v=261105.001-2611070919"></script>
-<script defer src="pt/numbers.js?v=261105.001-2611070919"></script>
-<script defer src="pt/greeting.js?v=261105.001-2611070919"></script>
-<script defer src="pt/sentences.js?v=261105.001-2611070919"></script>
-<script defer src="pt/desk-sheets.js?v=261105.001-2611070919"></script>
-<script defer src="core/builder.js?v=261105.001-2611070919"></script>
-<script defer src="pt/builder.js?v=261105.001-2611070919"></script>
-<script defer src="core/start.js?v=261105.001-2611070919"></script>
+<script defer src="ui/en.js?v=261105.001-2611071759"></script>
+<script defer src="core/text.js?v=261105.001-2611071759"></script>
+<script defer src="pt/app.js?v=261105.001-2611071759"></script>
+<script defer src="core/core.js?v=261105.001-2611071759"></script>
+<script defer src="core/questions.js?v=261105.001-2611071759"></script>
+<script defer src="pt/sounds.js?v=261105.001-2611071759"></script>
+<script defer src="pt/verbs.js?v=261105.001-2611071759"></script>
+<script defer src="pt/grammar-screen.js?v=261105.001-2611071759"></script>
+<script defer src="pt/numbers.js?v=261105.001-2611071759"></script>
+<script defer src="pt/greeting.js?v=261105.001-2611071759"></script>
+<script defer src="pt/sentences.js?v=261105.001-2611071759"></script>
+<script defer src="pt/desk-sheets.js?v=261105.001-2611071759"></script>
+<script defer src="core/builder.js?v=261105.001-2611071759"></script>
+<script defer src="pt/builder.js?v=261105.001-2611071759"></script>
+<script defer src="core/start.js?v=261105.001-2611071759"></script>
 </body>
 </html>

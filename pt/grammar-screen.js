@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/grammar-screen.js"] = "2611070919";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/grammar-screen.js"] = "2611071759";
 // Português Drill - Portuguese: the Gramática screen, grammar notes and the Tables pages.
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.
 
@@ -146,7 +146,4 @@ function showVerbTable(inf) {
   drillBtn.textContent = tx('grammar.drillVerb', { verb: v.inf });
   drillBtn.onclick = () => startVerbDrill([v], currentVerbTenses(), 'verbs');
   showScreen('grammar-note');
-}
-function closeGrammarNote() {
-  if (grammarNoteBack === 'verbs') showVerbsScreen(); else showGrammarScreen();
 }

@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/app.js"] = "2611070919";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/app.js"] = "2611071759";
 // Português Drill - this app's settings for the core (2026-11-07, refactor
 // step 6). Everything the core needs to know about *this* app that isn't a
 // rule of the language (those are in lang/pt.js) or a list (vocab.js,

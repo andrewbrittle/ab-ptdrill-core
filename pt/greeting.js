@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/greeting.js"] = "2611070919";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/greeting.js"] = "2611071759";
 // Português Drill - Portuguese: the daily greeting card.
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.
 

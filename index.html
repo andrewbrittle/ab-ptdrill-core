@@ -994,6 +994,7 @@
 </style>
 </head>
 <body>
+<script src="test-errors.js"></script>
 
   <!-- Daily greeting (2026-10-11) - first thing in <body> so it exists before
        the script below runs (the Japanese build learnt that the hard way). -->
@@ -1003,7 +1004,7 @@
         <div id="greeting-lines"></div>
       </div>
       <div class="greet-card greet-sentence" id="greeting-sentence"></div>
-      <div class="greet-hint">Tap a line to hear it</div>
+      <div class="greet-hint" data-t="page.tap-a-line-to-hear-it"></div>
       <button class="start-btn" onclick="dismissGreeting()">Continuar</button>
     </div>
   </div>
@@ -1019,8 +1020,8 @@
     <div class="head-btns">
       <!-- Global sound switch (2026-10-02) - off = the app makes no sound at
            all (see soundAllowed), so it never cuts into music. -->
-      <button class="settings-btn" id="sound-btn" onclick="toggleSoundOn()" title="Sound on" aria-label="Sound on"></button>
-      <button class="settings-btn" id="settings-btn" onclick="toggleSettings()" title="Settings" aria-label="Settings">⚙</button>
+      <button class="settings-btn" id="sound-btn" onclick="toggleSoundOn()" data-t-attr="title:page.sound-on,aria-label:page.sound-on"></button>
+      <button class="settings-btn" id="settings-btn" onclick="toggleSettings()" data-t-attr="title:page.settings,aria-label:page.settings">⚙</button>
     </div>
   </div>
   <div class="nav-row">
@@ -1037,53 +1038,53 @@
 
   <!-- Settings screen -->
   <div class="screen" id="screen-settings">
-    <div class="settings-title">Settings</div>
-    <div class="settings-sub">All data and settings are stored on this device and never go anywhere else.</div>
+    <div class="settings-title" data-t="page.settings"></div>
+    <div class="settings-sub" data-t="page.all-data-and-settings-are-stored"></div>
 
     <div style="text-align:center; margin-top:0.9rem; margin-bottom:0.4rem; display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-      <a href="./instructions.html" target="_blank" style="display:inline-block; font-size:13px; font-weight:600; color:var(--text-muted); text-decoration:none; border:1px solid var(--border); border-radius:99px; padding:8px 18px;">How this app works →</a>
-      <a href="./changelog.html" target="_blank" id="whats-new-link" style="display:inline-block; font-size:13px; font-weight:600; color:var(--text-muted); text-decoration:none; border:1px solid var(--border); border-radius:99px; padding:8px 18px; background:transparent;">What's new →</a>
+      <a href="./instructions.html" target="_blank" style="display:inline-block; font-size:13px; font-weight:600; color:var(--text-muted); text-decoration:none; border:1px solid var(--border); border-radius:99px; padding:8px 18px;" data-t="page.how-this-app-works"></a>
+      <a href="./changelog.html" target="_blank" id="whats-new-link" style="display:inline-block; font-size:13px; font-weight:600; color:var(--text-muted); text-decoration:none; border:1px solid var(--border); border-radius:99px; padding:8px 18px; background:transparent;" data-t="page.whats-new"></a>
     </div>
 
     <!-- Install card (from the Japanese app, 2026-10-14): only shown when the
          app is open as a web page rather than installed - see refreshInstallCard(). -->
     <div class="group-card install-card" id="install-card" style="display:none;">
       <div class="group-info">
-        <div class="group-name">Install the app</div>
+        <div class="group-name" data-t="page.install-the-app"></div>
         <div class="group-count" id="install-card-steps"></div>
-        <div class="group-count install-why">Installed, it opens full screen from its own icon and works offline.</div>
+        <div class="group-count install-why" data-t="page.installed-it-opens-full-screen-from"></div>
       </div>
-      <button type="button" class="install-btn" id="install-btn" onclick="runInstallPrompt()" style="display:none;">Install</button>
+      <button type="button" class="install-btn" id="install-btn" onclick="runInstallPrompt()" style="display:none;" data-t="page.install"></button>
     </div>
 
     <div class="group-card" id="theme-toggle-card" onclick="toggleTheme()" style="cursor:pointer;">
       <div class="group-info">
-        <div class="group-name">Light theme</div>
-        <div class="group-count">Switches from the default dark look to a light one</div>
+        <div class="group-name" data-t="page.light-theme"></div>
+        <div class="group-count" data-t="page.switches-from-the-default-dark-look"></div>
       </div>
       <div class="toggle" id="theme-toggle"></div>
     </div>
 
     <div class="group-card" id="hint-penalty-toggle-card" onclick="toggleHintPenalty()" style="cursor:pointer;">
       <div class="group-info">
-        <div class="group-name">Half credit for hinted answers</div>
-        <div class="group-count">Using a hint before answering halves the confidence boost for a correct answer</div>
+        <div class="group-name" data-t="page.half-credit-for-hinted-answers"></div>
+        <div class="group-count" data-t="page.using-a-hint-before-answering-halves"></div>
       </div>
       <div class="toggle" id="hint-penalty-toggle"></div>
     </div>
 
     <div class="group-card" id="strict-accents-toggle-card" onclick="toggleStrictAccents()" style="cursor:pointer;">
       <div class="group-info">
-        <div class="group-name">Accents must be right when typing</div>
-        <div class="group-count">Off: "voce" for você counts, with a reminder and half the confidence boost. On: it's marked wrong.</div>
+        <div class="group-name" data-t="page.accents-must-be-right-when-typing"></div>
+        <div class="group-count" data-t="page.off-voce-for-voc-counts-with"></div>
       </div>
       <div class="toggle" id="strict-accents-toggle"></div>
     </div>
 
     <div class="group-card" id="decay-colours-toggle-card" onclick="toggleDecayAffectsColours()" style="cursor:pointer;">
       <div class="group-info">
-        <div class="group-name">Fade confidence colours over time</div>
-        <div class="group-count">Also fades the colours themselves over time, not just drill odds — off by default</div>
+        <div class="group-name" data-t="page.fade-confidence-colours-over-time"></div>
+        <div class="group-count" data-t="page.also-fades-the-colours-themselves-over"></div>
       </div>
       <div class="toggle" id="decay-colours-toggle"></div>
     </div>
@@ -1093,11 +1094,11 @@
 
     <div class="group-card" id="backup-scores-card" style="cursor:default;">
       <div class="group-info">
-        <div class="group-name">Back up my progress</div>
-        <div class="group-count">Saves your scores to a file you can restore later</div>
+        <div class="group-name" data-t="page.back-up-my-progress"></div>
+        <div class="group-count" data-t="page.saves-your-scores-to-a-file"></div>
       </div>
-      <button class="start-btn" onclick="downloadScoresBackup()">Download backup</button>
-      <button class="start-btn" onclick="triggerRestoreFilePicker()">Restore from backup</button>
+      <button class="start-btn" onclick="downloadScoresBackup()" data-t="page.download-backup"></button>
+      <button class="start-btn" onclick="triggerRestoreFilePicker()" data-t="page.restore-from-backup"></button>
       <input type="file" id="restore-file-input" accept="application/json,.json" style="display:none;" onchange="handleRestoreFileSelected(event)">
       <div class="backup-status-msg" id="backup-status-msg"></div>
     </div>
@@ -1105,22 +1106,22 @@
     <!-- Private vocab (2026-10-02) - see PRIVATE VOCAB PACKS in the script. -->
     <div class="group-card" id="private-vocab-card" style="cursor:default;">
       <div class="group-info">
-        <div class="group-name">Private vocab</div>
-        <div class="group-count" id="private-vocab-status">Add extra word lists from a file, kept on this device only.</div>
+        <div class="group-name" data-t="page.private-vocab"></div>
+        <div class="group-count" id="private-vocab-status" data-t="page.add-extra-word-lists-from-a"></div>
       </div>
-      <button class="start-btn" onclick="triggerPrivateVocabPicker()">Load file</button>
-      <button class="start-btn" id="private-vocab-remove-btn" onclick="removePrivateVocab()" style="display:none;">Remove</button>
+      <button class="start-btn" onclick="triggerPrivateVocabPicker()" data-t="page.load-file"></button>
+      <button class="start-btn" id="private-vocab-remove-btn" onclick="removePrivateVocab()" style="display:none;" data-t="page.remove"></button>
       <input type="file" id="private-vocab-input" accept="application/json,.json" style="display:none;" onchange="handlePrivateVocabSelected(event)">
       <div class="backup-status-msg" id="private-vocab-msg"></div>
     </div>
 
-    <div style="text-align:center; font-size:12px; font-weight:600; color:var(--text-dim); margin-top:0.75rem;">v261105.001 · test 2611070843</div>
+    <div style="text-align:center; font-size:12px; font-weight:600; color:var(--text-dim); margin-top:0.75rem;">v261105.001 · test 2611070914</div>
   </div>
 
 
   <!-- Vocab tile-selection reference screen (flat categories: colours, trip-prep) -->
   <div class="screen" id="screen-vocab-tile-selection">
-    <div class="settings-title" id="vocab-tile-selection-title">Reference</div>
+    <div class="settings-title" id="vocab-tile-selection-title" data-t="page.reference"></div>
     <!-- Populated by showVocabTileSelection from CATEGORY_REFERENCE_LINKS
          (2026-08-31) - 0 or more reference-screen links for whichever
          category is showing, right below the heading and above the "tap a
@@ -1136,23 +1137,23 @@
          selecting it. Hidden where speech isn't supported. -->
     <div class="group-card" id="vocab-tile-speak-card" onclick="toggleTileTapToSpeak()" style="cursor:pointer; display:none;">
       <div class="group-info">
-        <div class="group-name">Tap a card to hear it</div>
-        <div class="group-count" id="vocab-tile-speak-desc">Reads the Portuguese out loud when you tap a card, instead of picking it for a drill. Turn off to choose words to drill.</div>
+        <div class="group-name" data-t="page.tap-a-card-to-hear-it"></div>
+        <div class="group-count" id="vocab-tile-speak-desc" data-t="page.reads-the-portuguese-out-loud-when"></div>
       </div>
       <div class="toggle"></div>
     </div>
-    <div class="settings-sub" id="vocab-tile-selection-sub">Tap a word to select it for drilling.</div>
+    <div class="settings-sub" id="vocab-tile-selection-sub" data-t="page.tap-a-word-to-select-it"></div>
 
     <div class="tile-select-actions-row">
       <div class="group-card" id="vocab-tile-select-all-card" onclick="toggleSelectAllVocabTiles()" style="cursor:pointer;">
         <div class="group-info">
-          <div class="group-name" id="vocab-tile-select-all-label">Select all</div>
+          <div class="group-name" id="vocab-tile-select-all-label" data-t="page.select-all"></div>
         </div>
         <div style="font-size:20px; color:var(--text-muted);">→</div>
       </div>
       <div class="group-card" id="vocab-tile-random20-card" onclick="toggleRandomVocabTiles()" style="cursor:pointer; display:none;">
         <div class="group-info">
-          <div class="group-name" id="vocab-tile-random20-label">Random 20</div>
+          <div class="group-name" id="vocab-tile-random20-label" data-t="page.random-20"></div>
         </div>
         <div style="font-size:20px; color:var(--text-muted);">→</div>
       </div>
@@ -1162,8 +1163,8 @@
 
     <div class="group-card" id="vocab-tile-reversed-mode-card" onclick="toggleVocabTileReversedMode()" style="cursor:pointer;">
       <div class="group-info">
-        <div class="group-name">Reverse the drill direction</div>
-        <div class="group-count">See the English first and pick the Portuguese, instead of reading Portuguese and picking the English</div>
+        <div class="group-name" data-t="page.reverse-the-drill-direction"></div>
+        <div class="group-count" data-t="page.see-the-english-first-and-pick"></div>
       </div>
       <div class="toggle"></div>
     </div>
@@ -1179,29 +1180,29 @@
          syncVocabTileModeToggles. -->
     <div class="group-card" id="vocab-tile-type-answer-card" onclick="toggleVocabTileTypeAnswerMode()" style="cursor:pointer;">
       <div class="group-info">
-        <div class="group-name">Type the answer instead of choosing</div>
-        <div class="group-count">Type the Portuguese yourself instead of picking from four options — from the English, or from what you hear when Listen is on. Missing accents are accepted with a reminder unless Settings says otherwise.</div>
+        <div class="group-name" data-t="page.type-the-answer-instead-of-choosing"></div>
+        <div class="group-count" data-t="page.type-the-portuguese-yourself-instead-of"></div>
       </div>
       <div class="toggle"></div>
     </div>
 
     <div class="group-card" id="vocab-tile-listen-card" onclick="toggleVocabTileListenMode()" style="cursor:pointer;">
       <div class="group-info">
-        <div class="group-name">Listen instead of reading</div>
-        <div class="group-count">Hear the word instead of seeing it, then pick the meaning — or, with Type on, write down what you heard. Needs sound on; no effect while reversed.</div>
+        <div class="group-name" data-t="page.listen-instead-of-reading"></div>
+        <div class="group-count" data-t="page.hear-the-word-instead-of-seeing"></div>
       </div>
       <div class="toggle"></div>
     </div>
     <div class="group-card say-card" id="vocab-tile-say-card" onclick="toggleVocabTileSayMode()" style="cursor:pointer;">
       <div class="group-info">
-        <div class="group-name">Say it out loud</div>
-        <div class="group-count">See the English, say the Portuguese out loud, then tap to see and hear the answer and mark yourself. Overrides the switches above.</div>
+        <div class="group-name" data-t="page.say-it-out-loud"></div>
+        <div class="group-count" data-t="page.see-the-english-say-the-portuguese"></div>
       </div>
       <div class="toggle"></div>
     </div>
 
-    <button class="start-btn" id="vocab-tile-drill-btn" onclick="drillVocabTileSelection()" disabled style="margin-top:0.5rem;">Drill with this selection</button>
-    <button class="btn-secondary" onclick="navBack()">← Back</button>
+    <button class="start-btn" id="vocab-tile-drill-btn" onclick="drillVocabTileSelection()" disabled style="margin-top:0.5rem;" data-t="page.drill-with-this-selection"></button>
+    <button class="btn-secondary" onclick="navBack()" data-t="page.back"></button>
   </div>
 
   <!-- Drill screen -->
@@ -1211,17 +1212,17 @@
       <div class="progress-label" id="prog-label">1 / 0</div>
     </div>
     <div class="stats-row">
-      <div class="stat-pill"><div class="stat-num green" id="stat-correct">0</div><div class="stat-lbl">correct</div></div>
-      <div class="stat-pill"><div class="stat-num red" id="stat-wrong">0</div><div class="stat-lbl">wrong</div></div>
-      <div class="stat-pill"><div class="stat-num blue" id="stat-hints">0</div><div class="stat-lbl">hints</div></div>
-      <div class="stat-pill"><div class="stat-num gold" id="stat-left">0</div><div class="stat-lbl">left</div></div>
+      <div class="stat-pill"><div class="stat-num green" id="stat-correct">0</div><div class="stat-lbl" data-t="page.correct"></div></div>
+      <div class="stat-pill"><div class="stat-num red" id="stat-wrong">0</div><div class="stat-lbl" data-t="page.wrong"></div></div>
+      <div class="stat-pill"><div class="stat-num blue" id="stat-hints">0</div><div class="stat-lbl" data-t="page.hints"></div></div>
+      <div class="stat-pill"><div class="stat-num gold" id="stat-left">0</div><div class="stat-lbl" data-t="page.left"></div></div>
     </div>
     <div class="card">
       <div style="text-align:center;"><span class="type-badge" id="q-badge">base</span></div>
       <div class="char-display" id="q-char"></div>
       <div class="alt-form" id="q-alt-form" style="display:none;"></div>
       <div class="hint-btn-row" id="hint-btn-row">
-        <button class="speak-btn" id="speak-btn" onclick="speakCurrent()" title="Hear it" style="display:none;">
+        <button class="speak-btn" id="speak-btn" onclick="speakCurrent()" data-t-attr="title:page.hear-it" style="display:none;">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polygon points="3 9 8 9 12 5 12 19 8 15 3 15" fill="currentColor" stroke="currentColor"></polygon>
             <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
@@ -1234,10 +1235,10 @@
       <div class="feedback" id="q-feedback"></div>
     </div>
     <div class="context-card" id="q-context-card" style="display:none;">
-      <div class="context-card-label">Context seen in:</div>
+      <div class="context-card-label" data-t="page.context-seen-in"></div>
       <div id="q-context-card-body"></div>
     </div>
-    <button class="next-btn" id="next-btn" onclick="nextQuestion()">Next →</button>
+    <button class="next-btn" id="next-btn" onclick="nextQuestion()" data-t="page.next"></button>
   </div>
 
   <!-- Results screen -->
@@ -1248,35 +1249,35 @@
       <div class="missed-label" id="res-missed-label"></div>
       <div id="res-missed"></div>
       <div class="results-btns">
-        <button class="btn-primary" onclick="drillAgain()">Drill again</button>
-        <button class="btn-secondary" id="res-missed-btn" onclick="drillMissed()" style="display:none">Drill missed only</button>
-        <button class="btn-secondary" onclick="goBackToSettings()">Change groups</button>
+        <button class="btn-primary" onclick="drillAgain()" data-t="page.drill-again"></button>
+        <button class="btn-secondary" id="res-missed-btn" onclick="drillMissed()" style="display:none" data-t="page.drill-missed-only"></button>
+        <button class="btn-secondary" onclick="goBackToSettings()" data-t="page.change-groups"></button>
       </div>
     </div>
   </div>
   <!-- Match settings screen -->
   <div class="screen visible" id="screen-match-settings">
-    <div class="settings-title">Vocab</div>
-    <div class="settings-sub">Pick a word set, or tap the dice for a random drill.</div>
+    <div class="settings-title" data-t="page.vocab"></div>
+    <div class="settings-sub" data-t="page.pick-a-word-set-or-tap"></div>
 
     <!-- Portuguese build: Groups (cross-topic collections, by tag), the
          random page, and Topics (every category in vocab.js). The Japanese
          build's L1/L2/L3/Untaught pills were course levels. -->
     <div class="level-filter-row" id="vocab-level-filter-row">
-      <button class="level-pill active" id="level-pill-theme" onclick="setMatchLevel('theme')">Groups</button>
-      <button class="level-pill level-pill-icon" id="level-pill-random" onclick="setMatchLevel('random')" title="Random drills" aria-label="Random drills"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"></rect><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"></circle><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"></circle><circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" stroke="none"></circle></svg></button>
+      <button class="level-pill active" id="level-pill-theme" onclick="setMatchLevel('theme')" data-t="page.groups"></button>
+      <button class="level-pill level-pill-icon" id="level-pill-random" onclick="setMatchLevel('random')" data-t-attr="title:page.random-drills,aria-label:page.random-drills" ><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3.5"></rect><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none"></circle><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"></circle><circle cx="15.5" cy="15.5" r="1.5" fill="currentColor" stroke="none"></circle></svg></button>
       <!-- Topic pills (Basics / Travel / Life) are added here from vocab.js's
            PT_DRILL_SECTIONS - see renderSectionPills. -->
     </div>
 
     <div class="level-filter-row andrew-row" id="vocab-andrew-filter-row">
       <div class="vocab-search-pill">
-        <input type="text" id="vocab-search-input" class="vocab-search-input" placeholder="Search Portuguese or English…" onkeydown="handleVocabSearchKeydown(event)" oninput="syncVocabSearchClear()">
-        <button type="button" class="vocab-search-clear" id="vocab-search-clear" onclick="clearVocabSearch()" title="Clear" aria-label="Clear search" style="display:none;">
+        <input type="text" id="vocab-search-input" class="vocab-search-input" data-t-attr="placeholder:page.search-portuguese-or-english" onkeydown="handleVocabSearchKeydown(event)" oninput="syncVocabSearchClear()">
+        <button type="button" class="vocab-search-clear" id="vocab-search-clear" onclick="clearVocabSearch()" data-t-attr="title:page.clear,aria-label:page.clear-search" style="display:none;">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg>
         </button>
       </div>
-      <button class="vocab-search-btn" onclick="submitVocabSearch()" title="Search" aria-label="Search">
+      <button class="vocab-search-btn" onclick="submitVocabSearch()" data-t-attr="title:page.search,aria-label:page.search">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="7"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -1295,62 +1296,62 @@
     <div id="match-random-view" style="display:none;">
       <div class="group-card cat-tile" data-random-key="all" onclick="selectRandomChoice('all')" style="cursor:pointer;">
         <div class="cat-tile-top cat-tile-top-stack">
-          <div class="group-name">All vocabulary</div>
-          <div class="random-choice-desc">20 random words from everything</div>
+          <div class="group-name" data-t="page.all-vocabulary"></div>
+          <div class="random-choice-desc" data-t="page.20-random-words-from-everything"></div>
         </div>
         <div class="cat-bar" id="theme-all-vocab-swatch"></div>
       </div>
       <div class="group-card cat-tile" data-random-key="weakest" onclick="selectRandomChoice('weakest')" style="cursor:pointer;">
         <div class="cat-tile-top cat-tile-top-stack">
-          <div class="group-name">Weakest 20</div>
-          <div class="random-choice-desc">The 20 words you've scored lowest on</div>
+          <div class="group-name" data-t="page.weakest-20"></div>
+          <div class="random-choice-desc" data-t="page.the-20-words-youve-scored-lowest"></div>
         </div>
         <div class="cat-bar" id="theme-weakest-vocab-swatch"></div>
       </div>
       <div class="group-card cat-tile" data-random-key="untested" onclick="selectRandomChoice('untested')" style="cursor:pointer;">
         <div class="cat-tile-top cat-tile-top-stack">
-          <div class="group-name">Untested 20</div>
-          <div class="random-choice-desc">20 words you haven't been tested on yet<span id="untested-count"></span></div>
+          <div class="group-name" data-t="page.untested-20"></div>
+          <div class="random-choice-desc"><span data-t="page.20-words-you-havent-been-tested"></span><span id="untested-count"></span></div>
         </div>
         <div class="cat-bar" id="theme-untested-vocab-swatch"></div>
       </div>
       <div class="group-card cat-tile" data-random-key="sounds" onclick="selectRandomChoice('sounds')" style="cursor:pointer;">
         <div class="cat-tile-top cat-tile-top-stack">
-          <div class="group-name">Sounds alike</div>
-          <div class="random-choice-desc">Hear a word, pick which of two it was: avó or avô, pão or pau, caro or carro. With sound off, read the English and pick the spelling. The switches below don't apply.</div>
+          <div class="group-name" data-t="page.sounds-alike"></div>
+          <div class="random-choice-desc" data-t="page.hear-a-word-pick-which-of"></div>
         </div>
         <div class="cat-bar" id="theme-sounds-swatch"></div>
       </div>
 
       <div class="group-card" id="reversed-mode-toggle-card" onclick="toggleVocabReversed()" style="cursor:pointer;">
         <div class="group-info">
-          <div class="group-name">Reverse the drill direction</div>
-          <div class="group-count">See the English first and pick the Portuguese, instead of reading Portuguese and picking the English</div>
+          <div class="group-name" data-t="page.reverse-the-drill-direction"></div>
+          <div class="group-count" data-t="page.see-the-english-first-and-pick"></div>
         </div>
         <div class="toggle" id="reversed-mode-toggle"></div>
       </div>
       <div class="group-card" id="type-answer-toggle-card" onclick="toggleTypeAnswerMode()" style="cursor:pointer;">
         <div class="group-info">
-          <div class="group-name">Type the answer instead of choosing</div>
-          <div class="group-count">Type the Portuguese yourself instead of picking from four options — from the English, or from what you hear when Listen is on. Missing accents are accepted with a reminder unless Settings says otherwise.</div>
+          <div class="group-name" data-t="page.type-the-answer-instead-of-choosing"></div>
+          <div class="group-count" data-t="page.type-the-portuguese-yourself-instead-of"></div>
         </div>
         <div class="toggle" id="type-answer-toggle"></div>
       </div>
       <div class="group-card" id="listen-toggle-card" onclick="toggleListenMode()" style="cursor:pointer;">
         <div class="group-info">
-          <div class="group-name">Listen instead of reading</div>
-          <div class="group-count">Hear the word instead of seeing it, then pick the meaning — or, with Type on, write down what you heard. Needs sound on; no effect while reversed.</div>
+          <div class="group-name" data-t="page.listen-instead-of-reading"></div>
+          <div class="group-count" data-t="page.hear-the-word-instead-of-seeing"></div>
         </div>
         <div class="toggle" id="listen-toggle"></div>
       </div>
       <div class="group-card say-card" id="say-toggle-card" onclick="toggleSayMode()" style="cursor:pointer;">
       <div class="group-info">
-        <div class="group-name">Say it out loud</div>
-        <div class="group-count">See the English, say the Portuguese out loud, then tap to see and hear the answer and mark yourself. Overrides the switches above.</div>
+        <div class="group-name" data-t="page.say-it-out-loud"></div>
+        <div class="group-count" data-t="page.see-the-english-say-the-portuguese"></div>
       </div>
       <div class="toggle"></div>
     </div>
-      <button class="start-btn" id="random-start-btn" onclick="startSelectedRandom()" disabled>Start</button>
+      <button class="start-btn" id="random-start-btn" onclick="startSelectedRandom()" disabled data-t="page.start"></button>
     </div>
 
   </div>
@@ -1359,89 +1360,89 @@
   <div class="screen" id="screen-verbs">
     <!-- Verbs live under Palavras now (2026-10-24): same title and pill row
          as the word lists, with Verbs lit. See renderSectionPills. -->
-    <div class="settings-title">Vocab</div>
+    <div class="settings-title" data-t="page.vocab"></div>
     <div class="level-filter-row" id="verbs-level-row"></div>
-    <div class="settings-sub" id="verb-selection-sub">Tap verbs to pick them, then drill 20 forms from the tenses above.</div>
+    <div class="settings-sub" id="verb-selection-sub" data-t="page.tap-verbs-to-pick-them-then"></div>
     <div class="level-filter-row verb-tense-row" id="verb-tense-row"></div>
     <!-- Confidence across every verb form in the chosen tenses (2026-10-16). -->
     <div class="group-card cat-tile verb-all-card">
       <div class="cat-tile-top">
-        <div class="group-name">All verbs</div>
+        <div class="group-name" data-t="page.all-verbs"></div>
         <div class="group-count" id="verb-all-count"></div>
       </div>
       <div class="cat-bar" id="verb-all-swatch"></div>
     </div>
     <div class="tile-select-actions-row">
       <div class="group-card" id="verb-select-all-card" onclick="toggleSelectAllVerbs()" style="cursor:pointer;">
-        <div class="group-info"><div class="group-name" id="verb-select-all-label">Select all</div></div>
+        <div class="group-info"><div class="group-name" id="verb-select-all-label" data-t="page.select-all"></div></div>
         <div style="font-size:20px; color:var(--text-muted);">→</div>
       </div>
       <div class="group-card" id="verb-random-card" onclick="toggleRandomVerbs()" style="cursor:pointer;">
-        <div class="group-info"><div class="group-name" id="verb-random-label">Random 20</div></div>
+        <div class="group-info"><div class="group-name" id="verb-random-label" data-t="page.random-20"></div></div>
         <div style="font-size:20px; color:var(--text-muted);">→</div>
       </div>
     </div>
     <div id="verb-tile-grid"></div>
     <div class="group-card" id="verb-type-card" onclick="toggleGrammarType()" style="cursor:pointer;">
       <div class="group-info">
-        <div class="group-name">Type the answer instead of choosing</div>
-        <div class="group-count">Type the verb form yourself. Missing accents are accepted with a reminder unless Settings says otherwise.</div>
+        <div class="group-name" data-t="page.type-the-answer-instead-of-choosing"></div>
+        <div class="group-count" data-t="page.type-the-verb-form-yourself-missing"></div>
       </div>
       <div class="toggle"></div>
     </div>
     <div class="group-card say-card" id="verb-say-card" onclick="toggleGrammarSay()" style="cursor:pointer;">
       <div class="group-info">
-        <div class="group-name">Say it out loud</div>
-        <div class="group-count">Say the form out loud, then tap to see and hear it and mark yourself. Overrides Type.</div>
+        <div class="group-name" data-t="page.say-it-out-loud"></div>
+        <div class="group-count" data-t="page.say-the-form-out-loud-then"></div>
       </div>
       <div class="toggle"></div>
     </div>
-    <button class="start-btn" id="verb-drill-btn" onclick="drillSelectedVerbs()" disabled>Pick some verbs to drill</button>
+    <button class="start-btn" id="verb-drill-btn" onclick="drillSelectedVerbs()" disabled data-t="page.pick-some-verbs-to-drill"></button>
   </div>
 
   <!-- Numbers screen (2026-10-11) - see NUMBERS & TIMES in the script. -->
   <div class="screen" id="screen-numbers">
-    <div class="settings-title">Numbers</div>
-    <div class="settings-sub">Random numbers and times to read, new every round, and look-ups for any number or time.</div>
+    <div class="settings-title" data-t="page.numbers"></div>
+    <div class="settings-sub" data-t="page.random-numbers-and-times-to-read"></div>
     <div class="level-filter-row">
-      <button class="level-pill" id="numbers-section-pill-times" onclick="setNumbersSection('times')">Times</button>
-      <button class="level-pill" id="numbers-section-pill-numbers" onclick="setNumbersSection('numbers')">Numbers</button>
+      <button class="level-pill" id="numbers-section-pill-times" onclick="setNumbersSection('times')" data-t="page.times"></button>
+      <button class="level-pill" id="numbers-section-pill-numbers" onclick="setNumbersSection('numbers')" data-t="page.numbers"></button>
     </div>
 
     <div class="numbers-section" id="numbers-section-times">
       <div class="group-card cat-tile" onclick="startTimeChallenge()" style="cursor:pointer;">
         <div class="cat-tile-top cat-tile-top-stack">
-          <div class="group-name">Reading times</div>
-          <div class="random-choice-desc">10 random times per round - everyday (às duas e meia da tarde) and timetable (às catorze e trinta), with at / until / from / around</div>
+          <div class="group-name" data-t="page.reading-times"></div>
+          <div class="random-choice-desc" data-t="page.10-random-times-per-round-everyday"></div>
         </div>
         <div class="cat-bar" id="times-score-swatch"></div>
       </div>
       <div class="group-card say-card" id="numbers-say-card" onclick="toggleNumbersSay()" style="cursor:pointer;">
         <div class="group-info">
-          <div class="group-name">Say it out loud</div>
-          <div class="group-count">Say the number or time, then tap to see and hear it and mark yourself</div>
+          <div class="group-name" data-t="page.say-it-out-loud"></div>
+          <div class="group-count" data-t="page.say-the-number-or-time-then"></div>
         </div>
         <div class="toggle"></div>
       </div>
       <div class="section-divider"></div>
       <div class="group-card tool-card">
         <div class="group-info">
-          <div class="group-name">Specific time</div>
-          <div class="group-count">Pick a time to see how it's said</div>
+          <div class="group-name" data-t="page.specific-time"></div>
+          <div class="group-count" data-t="page.pick-a-time-to-see-how"></div>
         </div>
         <div class="level-filter-row tool-pills">
-          <button class="level-pill" id="time-tool-style-everyday" onclick="setTimeToolStyle('everyday')">Everyday</button>
-          <button class="level-pill" id="time-tool-style-timetable" onclick="setTimeToolStyle('timetable')">Timetable</button>
+          <button class="level-pill" id="time-tool-style-everyday" onclick="setTimeToolStyle('everyday')" data-t="page.everyday"></button>
+          <button class="level-pill" id="time-tool-style-timetable" onclick="setTimeToolStyle('timetable')" data-t="page.timetable"></button>
         </div>
         <div class="time-tool-entry">
           <select id="time-tool-hour" onchange="updateTimeTool()"></select><span>:</span><select id="time-tool-minute" onchange="updateTimeTool()"></select>
-          <button class="time-tool-reset-btn" onclick="resetTimeToolToNow()" title="Now" aria-label="Reset to now">↺</button>
+          <button class="time-tool-reset-btn" onclick="resetTimeToolToNow()" data-t-attr="title:page.now,aria-label:page.reset-to-now">↺</button>
         </div>
         <div class="level-filter-row tool-pills">
-          <button class="level-pill" id="time-tool-frame-at" onclick="setTimeToolFrame('at')">at</button>
-          <button class="level-pill" id="time-tool-frame-until" onclick="setTimeToolFrame('until')">until</button>
-          <button class="level-pill" id="time-tool-frame-from" onclick="setTimeToolFrame('from')">from</button>
-          <button class="level-pill" id="time-tool-frame-around" onclick="setTimeToolFrame('around')">around</button>
+          <button class="level-pill" id="time-tool-frame-at" onclick="setTimeToolFrame('at')" data-t="page.at"></button>
+          <button class="level-pill" id="time-tool-frame-until" onclick="setTimeToolFrame('until')" data-t="page.until"></button>
+          <button class="level-pill" id="time-tool-frame-from" onclick="setTimeToolFrame('from')" data-t="page.from"></button>
+          <button class="level-pill" id="time-tool-frame-around" onclick="setTimeToolFrame('around')" data-t="page.around"></button>
         </div>
         <div class="tool-output" id="time-tool-output"></div>
       </div>
@@ -1450,23 +1451,23 @@
     <div class="numbers-section" id="numbers-section-numbers">
       <div class="group-card cat-tile" onclick="startNumberChallenge()" style="cursor:pointer;">
         <div class="cat-tile-top cat-tile-top-stack">
-          <div class="group-name">Reading numbers</div>
-          <div class="random-choice-desc">10 random numbers per round, from 0 to 99 999</div>
+          <div class="group-name" data-t="page.reading-numbers"></div>
+          <div class="random-choice-desc" data-t="page.10-random-numbers-per-round-from"></div>
         </div>
         <div class="cat-bar" id="numbers-score-swatch"></div>
       </div>
       <div class="group-card say-card" id="numbers-say-card-2" onclick="toggleNumbersSay()" style="cursor:pointer;">
         <div class="group-info">
-          <div class="group-name">Say it out loud</div>
-          <div class="group-count">Say the number or time, then tap to see and hear it and mark yourself</div>
+          <div class="group-name" data-t="page.say-it-out-loud"></div>
+          <div class="group-count" data-t="page.say-the-number-or-time-then"></div>
         </div>
         <div class="toggle"></div>
       </div>
       <div class="section-divider"></div>
       <div class="group-card tool-card">
         <div class="group-info">
-          <div class="group-name">Specific number</div>
-          <div class="group-count">Type a number to see how it's said - up to 999 999</div>
+          <div class="group-name" data-t="page.specific-number"></div>
+          <div class="group-count" data-t="page.type-a-number-to-see-how"></div>
         </div>
         <input class="tool-input" id="number-tool-input" type="number" inputmode="numeric" min="0" max="999999" step="1" placeholder="0" oninput="updateNumberTool()">
         <div class="tool-output" id="number-tool-output"></div>
@@ -1480,11 +1481,11 @@
        each slot. See buildDeskSheets(). -->
   <div class="screen" id="screen-desk-sheets">
     <div class="ds-toolbar">
-      <div class="settings-title">Desk sheets</div>
-      <div class="settings-sub">Pages to keep in front of you when you want to make up sentences of your own: pick a word from each column and put the sentence together, so your effort goes on the sentence, not on finding words. Shuffle for a different selection, then print or save as a PDF (A4, landscape). Phones sometimes start in portrait: switch to landscape in the print options.</div>
+      <div class="settings-title" data-t="page.desk-sheets"></div>
+      <div class="settings-sub" data-t="page.pages-to-keep-in-front-of"></div>
       <div class="ds-buttons">
-        <button type="button" class="ds-btn" onclick="buildDeskSheets()">Shuffle words</button>
-        <button type="button" class="ds-btn ds-btn-main" onclick="window.print()">Print / save PDF</button>
+        <button type="button" class="ds-btn" onclick="buildDeskSheets()" data-t="page.shuffle-words"></button>
+        <button type="button" class="ds-btn ds-btn-main" onclick="window.print()" data-t="page.print-save-pdf"></button>
       </div>
     </div>
     <div class="ds-scroll"><div id="desk-sheets"></div></div>
@@ -1494,24 +1495,24 @@
        The builder and challenge share one screen (screen-sb); part scores,
        the example sentence and the desk sheets live here too. -->
   <div class="screen" id="screen-build">
-    <div class="settings-title">Sentences</div>
-    <div class="settings-sub">Put sentences together yourself: pick a word from each column and the sentence builds as you go.</div>
+    <div class="settings-title" data-t="page.sentences"></div>
+    <div class="settings-sub" data-t="page.put-sentences-together-yourself-pick-a"></div>
     <div class="group-card cat-tile" onclick="showSentenceBuilder(false)" style="cursor:pointer;">
       <div class="cat-tile-top cat-tile-top-stack">
-        <div class="group-name">Sentence builder</div>
-        <div class="random-choice-desc">One card from each column, and pick the verb form yourself; the English follows along. Doing, Going, and Being - ser or estar, and making the describing word agree.</div>
+        <div class="group-name" data-t="page.sentence-builder"></div>
+        <div class="random-choice-desc" data-t="page.one-card-from-each-column-and"></div>
       </div>
     </div>
     <div class="group-card cat-tile" onclick="showSentenceBuilder(true)" style="cursor:pointer;">
       <div class="cat-tile-top cat-tile-top-stack">
-        <div class="group-name">Sentence challenge</div>
-        <div class="random-choice-desc">An English sentence to build in Portuguese. It's checked part by part, with one more go before the answer. Scored by part, never touching your word greens.</div>
+        <div class="group-name" data-t="page.sentence-challenge"></div>
+        <div class="random-choice-desc" data-t="page.an-english-sentence-to-build-in"></div>
       </div>
     </div>
     <div class="group-card cat-tile" onclick="showSentenceBuilder('reverse')" style="cursor:pointer;">
       <div class="cat-tile-top cat-tile-top-stack">
-        <div class="group-name">Reading challenge</div>
-        <div class="random-choice-desc">The other way round: a Portuguese sentence to read, and you pick the English for each part - including what the verb form tells you about who and when.</div>
+        <div class="group-name" data-t="page.reading-challenge"></div>
+        <div class="random-choice-desc" data-t="page.the-other-way-round-a-portuguese"></div>
       </div>
     </div>
     <div id="sb-parts-panel"></div>
@@ -1519,48 +1520,48 @@
     <div class="greet-card greet-sentence grammar-sentence" id="grammar-sentence"></div>
     <div class="group-card cat-tile" onclick="showDeskSheets()" style="cursor:pointer;">
       <div class="cat-tile-top cat-tile-top-stack">
-        <div class="group-name">Desk sheets</div>
-        <div class="random-choice-desc">Printable pages of words to build your own sentences from: pick one from each column</div>
+        <div class="group-name" data-t="page.desk-sheets"></div>
+        <div class="random-choice-desc" data-t="page.printable-pages-of-words-to-build"></div>
       </div>
     </div>
   </div>
 
   <div class="screen" id="screen-sb">
     <div class="sb-head">
-      <div class="settings-title" id="sb-title">Sentence builder</div>
+      <div class="settings-title" id="sb-title" data-t="page.sentence-builder"></div>
       <div class="level-filter-row" id="sb-mode-row">
-        <button type="button" class="level-pill" data-mode="do" onclick="sbSetMode('do')">Doing</button>
-        <button type="button" class="level-pill" data-mode="go" onclick="sbSetMode('go')">Going</button>
-        <button type="button" class="level-pill" data-mode="give" onclick="sbSetMode('give')">Giving</button>
-        <button type="button" class="level-pill" data-mode="being" onclick="sbSetMode('being')">Being</button>
+        <button type="button" class="level-pill" data-mode="do" onclick="sbSetMode('do')" data-t="page.doing"></button>
+        <button type="button" class="level-pill" data-mode="go" onclick="sbSetMode('go')" data-t="page.going"></button>
+        <button type="button" class="level-pill" data-mode="give" onclick="sbSetMode('give')" data-t="page.giving"></button>
+        <button type="button" class="level-pill" data-mode="being" onclick="sbSetMode('being')" data-t="page.being"></button>
       </div>
     </div>
     <div class="sb-strip" id="sb-strip"></div>
     <div class="sb-scroll"><div class="sb-cols" id="sb-cols"></div></div>
-    <div class="sb-tip">Works best with your phone turned sideways. Challenges keep a score for each part of the sentence (on the Sentences page); they never touch your word greens.</div>
+    <div class="sb-tip" data-t="page.works-best-with-your-phone-turned"></div>
   </div>
 
   <div class="screen" id="screen-grammar">
-    <div class="settings-title">Grammar</div>
-    <div class="settings-sub">The rules, one card each. Most have a drill at the bottom.</div>
+    <div class="settings-title" data-t="page.grammar"></div>
+    <div class="settings-sub" data-t="page.the-rules-one-card-each-most"></div>
     <div class="group-card cat-tile" onclick="startContractionDrill('grammar')" style="cursor:pointer;">
       <div class="cat-tile-top cat-tile-top-stack">
-        <div class="group-name">Contractions drill</div>
-        <div class="random-choice-desc">no, na, do, ao, pelo… filled into real sentences</div>
+        <div class="group-name" data-t="page.contractions-drill"></div>
+        <div class="random-choice-desc" data-t="page.no-na-do-ao-pelo-filled"></div>
       </div>
       <div class="cat-bar" id="contraction-swatch"></div>
     </div>
     <div class="group-card" id="grammar-type-card" onclick="toggleGrammarType()" style="cursor:pointer;">
       <div class="group-info">
-        <div class="group-name">Type the answer instead of choosing</div>
-        <div class="group-count">For the contractions and verb drills</div>
+        <div class="group-name" data-t="page.type-the-answer-instead-of-choosing"></div>
+        <div class="group-count" data-t="page.for-the-contractions-and-verb-drills"></div>
       </div>
       <div class="toggle"></div>
     </div>
     <div class="group-card say-card" id="grammar-say-card" onclick="toggleGrammarSay()" style="cursor:pointer;">
       <div class="group-info">
-        <div class="group-name">Say it out loud</div>
-        <div class="group-count">For the contractions and verb drills - say it, then check and mark yourself. Overrides Type.</div>
+        <div class="group-name" data-t="page.say-it-out-loud"></div>
+        <div class="group-count" data-t="page.for-the-contractions-and-verb-drills-2"></div>
       </div>
       <div class="toggle"></div>
     </div>
@@ -1568,7 +1569,7 @@
     <div id="grammar-note-list"></div>
     <!-- Tables (2026-11-05): the pattern tables in one place. ptTables(). -->
     <div class="section-divider"></div>
-    <div class="settings-sub grammar-tables-head"><strong>Tables</strong> - the patterns at a glance</div>
+    <div class="settings-sub grammar-tables-head"><strong data-t="page.tables"></strong><span data-t="page.tables-the-patterns-at-a-glance"></span></div>
     <div id="grammar-table-list"></div>
   </div>
 
@@ -1576,16 +1577,16 @@
   <div class="screen" id="screen-grammar-note">
     <div class="settings-title" id="grammar-note-title"></div>
     <div class="grammar-note" id="grammar-note-body"></div>
-    <button class="start-btn" id="grammar-note-drill-btn" style="display:none;">Drill</button>
-    <button class="btn-secondary" onclick="navBack()">← Back</button>
+    <button class="start-btn" id="grammar-note-drill-btn" style="display:none;" data-t="page.drill"></button>
+    <button class="btn-secondary" onclick="navBack()" data-t="page.back"></button>
   </div>
 
   <!-- Vocab reference screen (browse-only, no drilling) -->
   <div class="screen" id="screen-vocab-reference">
-    <div class="settings-title" id="vocab-ref-title">Reference</div>
-    <div class="settings-sub">A quick look — tap Back when you're done.</div>
+    <div class="settings-title" id="vocab-ref-title" data-t="page.reference"></div>
+    <div class="settings-sub" data-t="page.a-quick-look-tap-back-when"></div>
     <div id="vocab-ref-list"></div>
-    <button class="btn-secondary" onclick="navBack()">← Back</button>
+    <button class="btn-secondary" onclick="navBack()" data-t="page.back"></button>
   </div>
 
   <!-- Match game screen -->
@@ -1598,31 +1599,34 @@
      bump it together with the footer version and sw.js CACHE_VERSION.
      (Every script tag below has one - vocab.js, grammar.js, lang/pt.js,
      and each file in core/ and pt/.) -->
-<script src="vocab.js?v=261105.001-2611070843"></script>
+<script src="vocab.js?v=261105.001-2611070914"></script>
 <!-- Verbs, contractions and grammar notes (2026-10-11). -->
-<script src="grammar.js?v=261105.001-2611070843"></script>
+<script src="grammar.js?v=261105.001-2611070914"></script>
 <!-- The language module (2026-11-06): Portuguese rules - numbers and times so
      far - as a JavaScript module, handed to the app as window.LANG. Module
      scripts and "defer" scripts run in page order once the page has loaded,
      so this always runs before app.js below. -->
 <script type="module">
-import pt from './lang/pt.js?v=261105.001-2611070843';
+import pt from './lang/pt.js?v=261105.001-2611070914';
 window.LANG = pt;
 </script>
 <!-- The app (2026-11-07: split into the shared core and the Portuguese
      features). "defer" scripts run in this order once the page has loaded;
      core/start.js goes last because it starts the app. -->
-<script defer src="pt/app.js?v=261105.001-2611070843"></script>
-<script defer src="core/core.js?v=261105.001-2611070843"></script>
-<script defer src="core/questions.js?v=261105.001-2611070843"></script>
-<script defer src="pt/sounds.js?v=261105.001-2611070843"></script>
-<script defer src="pt/verbs.js?v=261105.001-2611070843"></script>
-<script defer src="pt/grammar-screen.js?v=261105.001-2611070843"></script>
-<script defer src="pt/numbers.js?v=261105.001-2611070843"></script>
-<script defer src="pt/greeting.js?v=261105.001-2611070843"></script>
-<script defer src="pt/sentences.js?v=261105.001-2611070843"></script>
-<script defer src="pt/desk-sheets.js?v=261105.001-2611070843"></script>
-<script defer src="pt/builder.js?v=261105.001-2611070843"></script>
-<script defer src="core/start.js?v=261105.001-2611070843"></script>
+<script defer src="ui/en.js?v=261105.001-2611070914"></script>
+<script defer src="core/text.js?v=261105.001-2611070914"></script>
+<script defer src="pt/app.js?v=261105.001-2611070914"></script>
+<script defer src="core/core.js?v=261105.001-2611070914"></script>
+<script defer src="core/questions.js?v=261105.001-2611070914"></script>
+<script defer src="pt/sounds.js?v=261105.001-2611070914"></script>
+<script defer src="pt/verbs.js?v=261105.001-2611070914"></script>
+<script defer src="pt/grammar-screen.js?v=261105.001-2611070914"></script>
+<script defer src="pt/numbers.js?v=261105.001-2611070914"></script>
+<script defer src="pt/greeting.js?v=261105.001-2611070914"></script>
+<script defer src="pt/sentences.js?v=261105.001-2611070914"></script>
+<script defer src="pt/desk-sheets.js?v=261105.001-2611070914"></script>
+<script defer src="core/builder.js?v=261105.001-2611070914"></script>
+<script defer src="pt/builder.js?v=261105.001-2611070914"></script>
+<script defer src="core/start.js?v=261105.001-2611070914"></script>
 </body>
 </html>

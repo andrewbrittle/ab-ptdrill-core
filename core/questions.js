@@ -24,7 +24,7 @@ function speakCurrent() {
 function renderTypeAnswerInput(container, placeholder, submitFn) {
   container.innerHTML = '<div class="type-answer-row">' +
     `<input type="text" id="type-answer-input" class="type-answer-input" lang="${LANG.code}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${placeholder}">` +
-    '<button type="button" class="type-answer-submit" id="type-answer-submit">Check</button>' +
+    `<button type="button" class="type-answer-submit" id="type-answer-submit">${tx('drill.check')}</button>` +
     '</div>';
   const input = document.getElementById('type-answer-input');
   const submitBtn = document.getElementById('type-answer-submit');
@@ -72,7 +72,7 @@ function promptFontSize(text) {
 // where it differs, and any usage note.
 function answerNotesHtml(q) {
   let html = '';
-  if (q.br) html += `<div class="feedback-standard-note">In Brazil: ${escapeHtmlText(q.br)}</div>`;
+  if (q.br) html += `<div class="feedback-standard-note">${tx('drill.inBrazil', { w: escapeHtmlText(q.br) })}</div>`;
   if (q.note) html += `<div class="feedback-standard-note">${escapeHtmlText(q.note)}</div>`;
   return html;
 }
@@ -109,12 +109,12 @@ const promptFigure = (q, charDisplay, promptEl) => {
   promptEl.innerHTML = q.promptHtml;
 };
 registerQuestionType({
-  id: 'number', badge: 'Numbers', scoring: 'consistency', longOptions: true,
+  id: 'number', badge: tx('types.numbers'), scoring: 'consistency', longOptions: true,
   render: (q, ui) => renderGrammarQuestion(q, ui.charDisplay, ui.container, ui.promptEl),
   prompt: promptFigure,
 });
 registerQuestionType({
-  id: 'time', badge: 'Times', scoring: 'consistency', longOptions: true,
+  id: 'time', badge: tx('types.times'), scoring: 'consistency', longOptions: true,
   render: (q, ui) => renderGrammarQuestion(q, ui.charDisplay, ui.container, ui.promptEl),
   prompt: promptFigure,
 });
@@ -193,7 +193,7 @@ function renderWordQuestion(q, ui) {
   if (mode === 'say') {
     charDisplay.style.fontSize = promptFontSize(q.answerEn);
     charDisplay.textContent = q.answerEn;
-    promptEl.textContent = 'Say it in Portuguese, then check';
+    promptEl.textContent = tx('drill.sayIt');
     q.answer = q.char;
     renderSayQuestion(q, container, q.char);
     return;
@@ -205,16 +205,16 @@ function renderWordQuestion(q, ui) {
 
   if (mode === 'listen' || mode === 'dictation') {
     charDisplay.style.fontSize = '52px';
-    renderListenPrompt(q, charDisplay, mode === 'dictation' ? 'Type what you hear' : 'What does the word you hear mean?');
+    renderListenPrompt(q, charDisplay, mode === 'dictation' ? tx('drill.typeWhatYouHear') : tx('drill.whatDoesItMeanHeard'));
   } else {
     const shown = askTarget ? q.answerEn : q.char;
     charDisplay.style.fontSize = promptFontSize(shown);
     charDisplay.textContent = shown;
-    promptEl.textContent = mode === 'type' ? 'Type this in Portuguese' : mode === 'reversed' ? 'Which is the Portuguese?' : 'What does this mean?';
+    promptEl.textContent = mode === 'type' ? tx('drill.typeThis') : mode === 'reversed' ? tx('drill.whichIsTarget') : tx('drill.whatDoesItMean');
   }
 
   if (mode === 'type' || mode === 'dictation') {
-    renderTypeAnswerInput(container, 'type the Portuguese…', raw => chooseTypedAnswer(raw, q));
+    renderTypeAnswerInput(container, tx('drill.typeTargetPlaceholder'), raw => chooseTypedAnswer(raw, q));
     return;
   }
   const field = askTarget ? 'jp' : 'en';
@@ -233,7 +233,7 @@ function finishAnswer() {
   document.getElementById('stat-wrong').textContent = wrong;
   const nextBtn = document.getElementById('next-btn');
   nextBtn.style.visibility = 'visible';
-  nextBtn.innerHTML = (current + 1 < deck.length ? 'Next →' : 'See results →') + '<span class="kbd-hint">space</span>';
+  nextBtn.innerHTML = (current + 1 < deck.length ? tx('drill.next') : tx('drill.seeResults')) + `<span class="kbd-hint">${tx('drill.keySpace')}</span>`;
 }
 
 function noteMissed(q) {
@@ -260,11 +260,11 @@ function choose(btn, selectedVal, answer, char) {
   if (isCorrect) {
     score++;
     btn.classList.add('correct');
-    fb.innerHTML = 'Correct!' + pair + answerNotesHtml(q);
+    fb.innerHTML = tx('drill.correct') + pair + answerNotesHtml(q);
     fb.className = 'feedback good';
   } else {
     btn.classList.add('wrong');
-    fb.innerHTML = `Not quite — the answer is "${escapeHtmlText(answer)}"` + pair + answerNotesHtml(q);
+    fb.innerHTML = tx('drill.notQuite', { a: escapeHtmlText(answer) }) + pair + answerNotesHtml(q);
     fb.className = 'feedback bad';
     wrong++;
     noteMissed(q);
@@ -311,10 +311,10 @@ function chooseTypedAnswer(rawInput, q) {
   if (contextCard && contextCardBody && contextCardBody.innerHTML.trim()) contextCard.style.display = 'block';
 
   const notes = [];
-  if (match && match.accentSlip) notes.push(`Watch the accents: ${escapeHtmlText(match.form)}`);
-  if (match && match.kind === 'brazil') notes.push(`That's the Brazilian form — in Portugal: ${escapeHtmlText(q.expect || q.char)}`);
-  if (match && match.noArticle && !match.accentSlip) notes.push(`Remember the article: ${escapeHtmlText(match.form)}`);
-  if (wrongArticle) notes.push(`Check the article: ${escapeHtmlText(wrongArticle)}`);
+  if (match && match.accentSlip) notes.push(tx('typed.watchAccents', { w: escapeHtmlText(match.form) }));
+  if (match && match.kind === 'brazil') notes.push(tx('typed.brazilianForm', { w: escapeHtmlText(q.expect || q.char) }));
+  if (match && match.noArticle && !match.accentSlip) notes.push(tx('typed.rememberArticle', { w: escapeHtmlText(match.form) }));
+  if (wrongArticle) notes.push(tx('typed.checkArticle', { w: escapeHtmlText(wrongArticle) }));
   const noteHtml = notes.map(n => `<div class="feedback-standard-note">${n}</div>`).join('');
 
   recordKanaResult(q, isCorrect, !!(match && match.accentSlip), true);
@@ -323,11 +323,11 @@ function chooseTypedAnswer(rawInput, q) {
   const fb = document.getElementById('q-feedback');
   if (isCorrect) {
     score++;
-    fb.innerHTML = 'Correct!' + (q.answerEn ? ` (${escapeHtmlText(q.answerEn)})` : '') + noteHtml + (match.kind === 'brazil' ? '' : answerNotesHtml(q));
+    fb.innerHTML = tx('drill.correct') + (q.answerEn ? ` (${escapeHtmlText(q.answerEn)})` : '') + noteHtml + (match.kind === 'brazil' ? '' : answerNotesHtml(q));
     fb.className = 'feedback good';
   } else {
     wrong++;
-    fb.innerHTML = `Not quite — the answer is "${escapeHtmlText(q.expect || q.char)}" (${escapeHtmlText(q.answerEn)})` + noteHtml + answerNotesHtml(q);
+    fb.innerHTML = tx('drill.notQuite', { a: escapeHtmlText(q.expect || q.char) }) + ` (${escapeHtmlText(q.answerEn)})` + noteHtml + answerNotesHtml(q);
     fb.className = 'feedback bad';
     noteMissed(q);
   }
@@ -341,14 +341,14 @@ function showResults() {
   showScreen('results');
   const total = deck.length;
   const pct = Math.round((score / total) * 100);
-  const msg = pct === 100 ? 'Perfect score!' : pct >= 80 ? 'Great work!' : pct >= 60 ? 'Getting there!' : 'Keep drilling!';
+  const msg = pct === 100 ? tx('results.perfect') : pct >= 80 ? tx('results.great') : pct >= 60 ? tx('results.gettingThere') : tx('results.keepDrilling');
   document.getElementById('res-score').textContent = score + '/' + total;
-  document.getElementById('res-msg').textContent = msg + ' (' + pct + '%)' + (hints > 0 ? ' · ' + hints + ' hint' + (hints === 1 ? '' : 's') + ' used' : '');
+  document.getElementById('res-msg').textContent = msg + ' (' + pct + '%)' + (hints > 0 ? ' · ' + tx('results.hintsUsed', { n: hints }) : '');
   const missedEl = document.getElementById('res-missed');
   const missedBtn = document.getElementById('res-missed-btn');
   const missedLabel = document.getElementById('res-missed-label');
   if (missed.length > 0) {
-    missedLabel.textContent = 'Focus on these:';
+    missedLabel.textContent = tx('results.focusOn');
     // missed entries are "char|answer" composites (see choose()) - display
     // only the char portion, same visual as before.
     const missedChars = missed.map(k => k.split('|')[0]);
@@ -356,7 +356,7 @@ function showResults() {
     missedBtn.style.display = 'block';
   } else {
     missedLabel.textContent = '';
-    missedEl.innerHTML = '<div class="no-missed">No mistakes — excellent!</div>';
+    missedEl.innerHTML = `<div class="no-missed">${tx('results.noMistakes')}</div>`;
     missedBtn.style.display = 'none';
   }
 }
@@ -414,7 +414,7 @@ function buildCategoryTile(key) {
   // count text and the bar, rather than resolving twice.
   const resolvedItems = resolveVocabCategory(key).items;
   const resolvedCount = resolvedItems.length;
-  const countText = v.note ? `${v.note} — ${resolvedCount} words` : `${resolvedCount} words`;
+  const countText = v.note ? `${v.note} — ${tx('groups.nWordsAlways', { n: resolvedCount })}` : tx('groups.nWordsAlways', { n: resolvedCount });
   const counts = getCategoryBandCounts(resolvedItems);
   card.innerHTML = `
     <div class="cat-tile-top">
@@ -802,7 +802,7 @@ let grammarSayModeActive = false;
 function renderSayQuestion(q, container, expectText) {
   const speakBtn = document.getElementById('speak-btn');
   if (speakBtn) speakBtn.style.display = 'none'; // it would say the answer
-  container.innerHTML = '<button type="button" class="start-btn say-reveal-btn" id="say-reveal-btn">Show answer<span class="kbd-hint">space</span></button>';
+  container.innerHTML = `<button type="button" class="start-btn say-reveal-btn" id="say-reveal-btn">${tx('say.showAnswer')}<span class="kbd-hint">${tx('drill.keySpace')}</span></button>`;
   document.getElementById('say-reveal-btn').onclick = () => revealSayAnswer(q, container, expectText);
 }
 function revealSayAnswer(q, container, expectText) {
@@ -810,10 +810,10 @@ function revealSayAnswer(q, container, expectText) {
   // The answer goes above the two marking buttons (inside the options grid),
   // so your eye lands on it before you mark yourself.
   container.innerHTML = `<div class="say-answer-box"><div class="say-answer">${escapeHtmlText(expectText)}</div>` +
-    (q.alt && q.alt.length ? `<div class="feedback-standard-note">Also: ${escapeHtmlText(q.alt.join(' / '))}</div>` : '') +
+    (q.alt && q.alt.length ? `<div class="feedback-standard-note">${tx('say.also', { w: escapeHtmlText(q.alt.join(' / ')) })}</div>` : '') +
     answerNotesHtml(q) + '</div>';
   if (soundAllowed()) speakTarget(getSpeechText(q));
-  [['Got it', true], ['Not this time', false]].forEach(([label, ok], idx) => {
+  [[tx('say.gotIt'), true], [tx('say.notThisTime'), false]].forEach(([label, ok], idx) => {
     const btn = document.createElement('button');
     btn.className = 'opt say-mark ' + (ok ? 'say-yes' : 'say-no');
     btn.innerHTML = `<span class="opt-num">${idx + 1}</span><span class="opt-rd">${label}</span>`;
@@ -845,7 +845,7 @@ function renderGrammarQuestion(q, charDisplay, container, promptEl) {
     return;
   }
   if (answerMode === 'type') {
-    renderTypeAnswerInput(container, 'type the form…', raw => chooseTypedAnswer(raw, q));
+    renderTypeAnswerInput(container, tx('drill.typeFormPlaceholder'), raw => chooseTypedAnswer(raw, q));
     return;
   }
   container.classList.toggle('long-options', !!type.longOptions);

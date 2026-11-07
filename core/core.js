@@ -24,7 +24,7 @@
 
 // VOCAB lives in vocab.js, loaded by the <script src> just before this one.
 if (!window.PT_DRILL_VOCAB) {
-  document.body.insertAdjacentHTML('afterbegin', '<div style="margin:1rem;padding:1rem;border:1.5px solid #e5484d;border-radius:12px;color:#e5484d;font:600 15px/1.4 sans-serif;text-align:center;">The word list (vocab.js) didn\'t load. Check your connection and reload the page.</div>');
+  document.body.insertAdjacentHTML('afterbegin', '<div style="margin:1rem;padding:1rem;border:1.5px solid #e5484d;border-radius:12px;color:#e5484d;font:600 15px/1.4 sans-serif;text-align:center;">' + tx('words.notLoaded') + '</div>');
   throw new Error('vocab.js did not load');
 }
 const VOCAB = window.PT_DRILL_VOCAB;
@@ -64,14 +64,14 @@ const PRIVATE_VOCAB_KEYS = [];
 // on this device is out of date, so Settings flags "check your file".
 const PRIVATE_VOCAB_INFO = { updated: null, skipped: 0 };
 function validatePrivateVocabPack(pack) {
-  if (!pack || typeof pack !== 'object' || pack.format !== 'pt-drill-private-vocab') return "That file isn't a private vocab file";
+  if (!pack || typeof pack !== 'object' || pack.format !== 'pt-drill-private-vocab') return tx('private.notAFile');
   const cats = pack.categories;
-  if (!cats || typeof cats !== 'object' || Array.isArray(cats) || !Object.keys(cats).length) return 'That file has no word lists in it';
+  if (!cats || typeof cats !== 'object' || Array.isArray(cats) || !Object.keys(cats).length) return tx('private.noLists');
   for (const key of Object.keys(cats)) {
     const c = cats[key];
-    if (!c || typeof c.label !== 'string' || !Array.isArray(c.items)) return 'A word list in that file is damaged';
+    if (!c || typeof c.label !== 'string' || !Array.isArray(c.items)) return tx('private.listDamaged');
     for (const it of c.items) {
-      if (!it || typeof it.pt !== 'string' || typeof it.en !== 'string' || !Array.isArray(it.tags)) return 'A word in that file is damaged';
+      if (!it || typeof it.pt !== 'string' || typeof it.en !== 'string' || !Array.isArray(it.tags)) return tx('private.wordDamaged');
     }
   }
   return null;
@@ -388,7 +388,7 @@ function resolveVocabCategory(key) {
     // "Select all" stays available (see showVocabTileSelection).
     if (!lastVocabSearchResults) return null;
     return {
-      label: `Search: "${lastVocabSearchResults.query}"`,
+      label: tx('search.label', { q: lastVocabSearchResults.query }),
       chars: '',
       items: lastVocabSearchResults.items,
       hasReference: true,
@@ -469,7 +469,7 @@ function submitVocabSearch() {
   const msgEl = document.getElementById('vocab-search-message');
   const raw = input.value.trim();
   if (raw.length < 2) {
-    msgEl.textContent = 'Type at least 2 characters.';
+    msgEl.textContent = tx('search.tooShort');
     msgEl.style.display = 'block';
     return;
   }
@@ -492,7 +492,7 @@ function submitVocabSearch() {
     });
   });
   if (results.length === 0) {
-    msgEl.textContent = `Nothing found yet for "${raw}".`;
+    msgEl.textContent = tx('search.nothing', { q: raw });
     msgEl.style.display = 'block';
     return;
   }
@@ -842,7 +842,7 @@ function showVocabTileSelection(categoryKey) {
       const row = document.createElement('div');
       row.className = 'level-filter-row latest-range-row';
       const cur = appSettings.latestWordsRange || 'batch';
-      [['batch', 'Latest batch'], ['1w', '1 week'], ['2w', '2 weeks']].forEach(([key, label]) => {
+      [['batch', tx('latest.batch')], ['1w', tx('latest.1w')], ['2w', tx('latest.2w')]].forEach(([key, label]) => {
         const btn = document.createElement('button');
         btn.className = 'level-pill' + (key === cur ? ' active' : '');
         btn.textContent = label;
@@ -968,8 +968,8 @@ function syncTileSoundControls(categoryKey) {
 function updateTileSelectionSubText(categoryKey) {
   const sub = document.getElementById('vocab-tile-selection-sub');
   if (!sub) return;
-  const peek = 'Hold a card to hear it and see any notes.';
-  sub.textContent = (tileSpeakModeActive(categoryKey) ? 'Tap a card to hear it. ' : 'Tap a word to select it for drilling. ') + peek;
+  const peek = tx('tiles.holdToPeek');
+  sub.textContent = (tileSpeakModeActive(categoryKey) ? tx('tiles.tapToHear') : tx('tiles.tapToSelect')) + ' ' + peek;
 }
 function toggleTileTapToSpeak() {
   appSettings.tileTapToSpeak = !appSettings.tileTapToSpeak;
@@ -1023,7 +1023,7 @@ function showTilePeekBubble(tile, item) {
   // the bubble's side is known, since it isn't always above the card.
   // Portuguese build: the second line (romaji in the Japanese build) shows the
   // Brazilian form where it differs, then any usage note.
-  const extra = [item.br ? 'Brazil: ' + escapeHtmlText(item.br) : '', item.note ? escapeHtmlText(item.note) : ''].filter(Boolean).join(' · ');
+  const extra = [item.br ? tx('tiles.brazil', { w: escapeHtmlText(item.br) }) : '', item.note ? escapeHtmlText(item.note) : ''].filter(Boolean).join(' · ');
   b.innerHTML = `<div class="peek-jp">${escapeHtmlText(item.jp)}</div>${extra ? `<div class="peek-romaji">${extra}</div>` : ''}<div class="peek-en">${escapeHtmlText(item.en)}</div>`;
   document.body.appendChild(b);
   const r = tile.getBoundingClientRect();
@@ -1280,21 +1280,21 @@ function syncVocabDrillBtn() {
   if (!btn || !set) return;
   const n = set.size;
   btn.disabled = n === 0;
-  btn.textContent = n === 0 ? 'Pick some words to drill' : `Drill ${n} word${n === 1 ? '' : 's'}`;
+  btn.textContent = n === 0 ? tx('tiles.pickSome') : tx('tiles.drillN', { n });
 }
 function updateSelectAllVocabTilesLabel() {
   const categoryKey = vocabTileCategory;
   const total = resolveVocabCategory(categoryKey).items.length;
   const set = vocabTileSelected[categoryKey];
   const allSelected = !vocabTileRandomMode[categoryKey] && set.size === total;
-  document.getElementById('vocab-tile-select-all-label').textContent = allSelected ? 'Deselect all' : 'Select all';
+  document.getElementById('vocab-tile-select-all-label').textContent = allSelected ? tx('tiles.deselectAll') : tx('tiles.selectAll');
   document.getElementById('vocab-tile-select-all-card').classList.toggle('selected', allSelected);
 }
 
 function updateRandomVocabTilesLabel() {
   const active = !!vocabTileRandomMode[vocabTileCategory];
   const label = document.getElementById('vocab-tile-random20-label');
-  if (label) label.textContent = active ? 'Deselect all' : `Random ${currentRandomPickSize(vocabTileCategory)}`;
+  if (label) label.textContent = active ? tx('tiles.deselectAll') : tx('tiles.randomN', { n: currentRandomPickSize(vocabTileCategory) });
   const card = document.getElementById('vocab-tile-random20-card');
   if (card) card.classList.toggle('selected', active);
 }
@@ -1382,12 +1382,12 @@ function toggleSettings() {
   else if (navCurrent !== 'settings') showSettingsScreen();
 }
 function navLabel(id) {
-  if (id === 'match-settings') return ({ theme: 'Groups', random: 'Random' })[currentMatchLevel] || 'Vocab';
+  if (id === 'match-settings') return ({ theme: tx('nav.groups'), random: tx('nav.random') })[currentMatchLevel] || tx('nav.vocab');
   if (APP.screens[id] && APP.screens[id].label) return APP.screens[id].label;
-  if (id === 'drill') return 'Drill';
-  if (id === 'results') return 'Results';
-  const t = document.querySelector('#screen-' + id + ' .settings-title');
-  return (t && t.textContent.trim()) || 'Back';
+  if (id === 'drill') return tx('nav.drill');
+  if (id === 'results') return tx('nav.results');
+  const title = document.querySelector('#screen-' + id + ' .settings-title');
+  return (title && title.textContent.trim()) || tx('nav.back');
 }
 function renderNavBack() {
   document.querySelectorAll('.nav-back').forEach(b => b.remove());
@@ -1426,7 +1426,7 @@ function showScreen(id) {
   // Back has its own link (renderNavBack), so the tab stays a tab.
   const inReadSubScreen = false;
   if (inReadSubScreen) {
-    navMatch.textContent = 'Back';
+    navMatch.textContent = tx('nav.back');
     navMatch.classList.add('sub-screen');
     navMatch.onclick = id === 'vocab-reference' ? closeVocabReference : tryResumeMatch;
   } else {
@@ -1584,7 +1584,7 @@ function updateSoundButton() {
   const on = soundAllowed();
   btn.innerHTML = on ? SOUND_ICON_ON : SOUND_ICON_OFF;
   btn.classList.toggle('muted', !on);
-  btn.title = on ? 'Sound on - tap to mute' : 'Sound off - tap to turn on';
+  btn.title = on ? tx('sound.onTapToMute') : tx('sound.offTapToTurnOn');
   btn.setAttribute('aria-label', btn.title);
 }
 function toggleSoundOn() {
@@ -1888,11 +1888,11 @@ function refreshInstallCard() {
   const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   const android = /Android/.test(ua);
   let steps;
-  if (ios) steps = 'Tap the Share button (the square with an arrow, at the bottom in Safari or top right in Chrome), scroll down and tap <strong>Add to Home Screen</strong>, then Add.';
-  else if (android && deferredInstallPrompt) steps = 'Tap <strong>Install</strong>, or use the browser menu (⋮) → Install app.';
-  else if (android) steps = 'In Chrome or Vivaldi, open the menu (⋮), then <strong>Install app</strong> or <strong>Add to Home screen</strong>.';
-  else if (deferredInstallPrompt) steps = 'Click <strong>Install</strong>, or use the install icon at the right of the address bar.';
-  else steps = 'On a phone, open this page and use the browser\'s Add to Home Screen. On a computer, look for an install icon at the right of the address bar (Chrome or Edge).';
+  if (ios) steps = tx('install.ios');
+  else if (android && deferredInstallPrompt) steps = tx('install.androidPrompt');
+  else if (android) steps = tx('install.android');
+  else if (deferredInstallPrompt) steps = tx('install.desktopPrompt');
+  else steps = tx('install.other');
   document.getElementById('install-card-steps').innerHTML = steps;
   document.getElementById('install-btn').style.display = deferredInstallPrompt ? 'inline-block' : 'none';
   card.style.display = 'flex';
@@ -2040,7 +2040,7 @@ function downloadScoresBackup() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
-  showBackupStatus('Backup downloaded', false);
+  showBackupStatus(tx('backup.downloaded'), false);
 }
 
 function triggerRestoreFilePicker() {
@@ -2063,14 +2063,14 @@ function handleRestoreFileSelected(event) {
     try {
       parsed = JSON.parse(reader.result);
     } catch (e) {
-      showBackupStatus("That file isn't a valid backup", true);
+      showBackupStatus(tx('backup.notValid'), true);
       return;
     }
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      showBackupStatus("That file isn't a valid backup", true);
+      showBackupStatus(tx('backup.notValid'), true);
       return;
     }
-    if (!window.confirm("This replaces your current progress with what's in this backup. Continue?")) return;
+    if (!window.confirm(tx('backup.confirmRestore'))) return;
     // Same bare-number -> {score,lastSeen} normalisation the app runs on
     // load (see above KANA_SCORE_KEY) - cheap and idempotent, and protects
     // against restoring an old-shape export without duplicating the whole
@@ -2082,9 +2082,9 @@ function handleRestoreFileSelected(event) {
     });
     kanaScores = parsed;
     saveKanaScores();
-    showBackupStatus('Progress restored', false);
+    showBackupStatus(tx('backup.restored'), false);
   };
-  reader.onerror = () => showBackupStatus("Couldn't read that file", true);
+  reader.onerror = () => showBackupStatus(tx('file.cantRead'), true);
   reader.readAsText(file);
 }
 
@@ -2106,18 +2106,18 @@ function updatePrivateVocabStatus() {
   const removeBtn = document.getElementById('private-vocab-remove-btn');
   if (!status) return;
   if (PRIVATE_VOCAB_KEYS.length) {
-    const parts = PRIVATE_VOCAB_KEYS.map(k => `${VOCAB[k].label} (${VOCAB[k].items.length} words)`);
+    const parts = PRIVATE_VOCAB_KEYS.map(k => tx('private.listWithCount', { label: VOCAB[k].label, n: VOCAB[k].items.length }));
     let dated = '';
     if (PRIVATE_VOCAB_INFO.updated) {
       const d = new Date(PRIVATE_VOCAB_INFO.updated + 'T12:00:00');
-      if (!isNaN(d)) dated = ' — file dated ' + d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      if (!isNaN(d)) dated = tx('private.fileDated', { date: d.toLocaleDateString(tx('dates.locale'), { day: 'numeric', month: 'short', year: 'numeric' }) });
     }
-    status.textContent = 'Loaded on this device: ' + parts.join(', ') + dated + '. Load a newer file to replace it.';
+    status.textContent = tx('private.loaded', { lists: parts.join(', '), dated });
     const n = PRIVATE_VOCAB_INFO.skipped;
     if (n) {
       const warn = document.createElement('div');
       warn.style.cssText = 'color: var(--accent); font-weight: 600; margin-top: 4px;';
-      warn.textContent = `Check your file: ${n} word${n === 1 ? ' in it is' : 's in it are'} now part of the course itself, so this looks like an older version. Load the latest file.`;
+      warn.textContent = tx('private.olderFile', { n });
       status.appendChild(warn);
     }
     if (removeBtn) removeBtn.style.display = '';
@@ -2145,20 +2145,20 @@ function handlePrivateVocabSelected(event) {
   const reader = new FileReader();
   reader.onload = () => {
     let pack;
-    try { pack = JSON.parse(reader.result); } catch (e) { showPrivateVocabMsg("That file isn't a private vocab file", true); return; }
+    try { pack = JSON.parse(reader.result); } catch (e) { showPrivateVocabMsg(tx('private.notAFile'), true); return; }
     const problem = validatePrivateVocabPack(pack);
     if (problem) { showPrivateVocabMsg(problem, true); return; }
     try {
       localStorage.setItem(PRIVATE_VOCAB_KEY, JSON.stringify(pack));
-    } catch (e) { showPrivateVocabMsg("Couldn't save it on this device", true); return; }
-    showPrivateVocabMsg('Loaded - reloading…', false);
+    } catch (e) { showPrivateVocabMsg(tx('private.cantSave'), true); return; }
+    showPrivateVocabMsg(tx('private.reloading'), false);
     setTimeout(() => location.reload(), 700);
   };
-  reader.onerror = () => showPrivateVocabMsg("Couldn't read that file", true);
+  reader.onerror = () => showPrivateVocabMsg(tx('file.cantRead'), true);
   reader.readAsText(file);
 }
 function removePrivateVocab() {
-  if (!window.confirm('Remove the private word lists from this device? Your scores for those words are kept, and you can load the file again any time.')) return;
+  if (!window.confirm(tx('private.confirmRemove'))) return;
   try { localStorage.removeItem(PRIVATE_VOCAB_KEY); } catch (e) { /* nothing stored */ }
   location.reload();
 }
@@ -2212,7 +2212,7 @@ function tryRestoreDrillSession() {
   if (!saved || !Array.isArray(saved.deck) || saved.deck.length === 0) return;
   if (!(saved.current >= 0) || saved.current >= saved.deck.length) { clearDrillSession(); return; }
   if (saved.savedAt && (Date.now() - saved.savedAt) > DRILL_SESSION_MAX_AGE_MS) { clearDrillSession(); return; }
-  const resume = window.confirm('It looks like your last session was interrupted. Resume where you left off?');
+  const resume = window.confirm(tx('session.resume'));
   if (!resume) { clearDrillSession(); return; }
   deck = saved.deck;
   current = saved.current;
@@ -2549,7 +2549,7 @@ function setupCatBar(barEl, counts) {
   renderCategoryBar(barEl, counts, !!barEl._showUntested);
   if (!barEl._catBarWired) {
     barEl._catBarWired = true;
-    barEl.title = "Tap to include words you haven't drilled yet";
+    barEl.title = tx('bars.includeUntested');
     barEl.onclick = (e) => {
       e.stopPropagation(); // don't also trigger the card's own onclick
       barEl._showUntested = !barEl._showUntested;
@@ -2573,7 +2573,7 @@ const CAT_CONF_CLASSES = CONFIDENCE_BANDS.map(b => 'cat-conf-' + b);
 // similar way to the others" per Andrew - just a different item source.
 // Topic pills (2026-10-11) - from vocab.js's PT_DRILL_SECTIONS; replaced a
 // single "Topics" pill listing all categories at once.
-const SECTIONS = (window.PT_DRILL_SECTIONS && window.PT_DRILL_SECTIONS.length) ? window.PT_DRILL_SECTIONS : [{ key: 'all', label: 'Topics' }];
+const SECTIONS = (window.PT_DRILL_SECTIONS && window.PT_DRILL_SECTIONS.length) ? window.PT_DRILL_SECTIONS : [{ key: 'all', label: tx('sections.topics') }];
 const SECTION_KEYS = SECTIONS.map(s => s.key);
 function renderSectionPills() {
   const row = document.getElementById('vocab-level-filter-row');
@@ -2649,7 +2649,7 @@ function refreshThemeCategorySwatches() {
     const bar = card.querySelector('.cat-bar');
     if (bar) setupCatBar(bar, getCategoryBandCounts(getThemePool(card.dataset.themeKey)));
     const cnt = card.querySelector('.theme-count');
-    if (cnt) { const n = resolveVocabCategory(card.dataset.themeKey).items.length; cnt.textContent = `${n} word${n === 1 ? '' : 's'}`; }
+    if (cnt) { const n = resolveVocabCategory(card.dataset.themeKey).items.length; cnt.textContent = tx('groups.nWords', { n }); }
   });
   // All vocabulary / Weakest 20 / Untested 20 aren't theme-pool-backed (see
   // the comments on those cards), so they're not covered by the
@@ -2697,8 +2697,8 @@ function refreshRandomView() {
   const untestedEl = document.getElementById('untested-count');
   if (untestedEl) {
     const uniq = list => new Set(list.map(i => i.jp + '|' + i.en)).size;
-    const fmt = n => n.toLocaleString('en-GB');
-    untestedEl.textContent = ` (${fmt(uniq(getUntestedVocabItems()))} of ${fmt(uniq(getAllVocabPool()))})`;
+    const fmt = n => n.toLocaleString(tx('dates.locale'));
+    untestedEl.textContent = tx('groups.untestedCount', { n: fmt(uniq(getUntestedVocabItems())), of: fmt(uniq(getAllVocabPool())) });
   }
   // Weakest needs something already tested, Untested needs something not yet
   // tested - dim whichever has nothing in it rather than a Start that does nothing.

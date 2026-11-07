@@ -1,3 +1,4 @@
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/grammar-screen.js"] = "2611070919";
 // Português Drill - Portuguese: the Gramática screen, grammar notes and the Tables pages.
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.
 
@@ -110,7 +111,7 @@ function showGrammarNote(id) {
   const drillBtn = document.getElementById('grammar-note-drill-btn');
   if (n.drill) {
     drillBtn.style.display = '';
-    drillBtn.textContent = n.drill.type === 'contractions' ? 'Drill contractions' : 'Drill these forms';
+    drillBtn.textContent = n.drill.type === 'contractions' ? tx('grammar.drillContractions') : tx('grammar.drillForms');
     drillBtn.onclick = () => {
       if (n.drill.type === 'contractions') startContractionDrill('grammar-note');
       else {
@@ -138,11 +139,11 @@ function showVerbTable(inf) {
     if (v.notes && v.notes[t]) html += `<p class="gtable-note">${escapeHtmlText(v.notes[t])}</p>`;
   });
   const body = document.getElementById('grammar-note-body');
-  body.innerHTML = '<p class="gtable-note">Tap a row to hear it.</p>' + html;
+  body.innerHTML = `<p class="gtable-note">${tx('grammar.tapRow')}</p>` + html;
   body.querySelectorAll('.gtable-say').forEach(row => { row.onclick = () => speakTarget(row.dataset.say); });
   const drillBtn = document.getElementById('grammar-note-drill-btn');
   drillBtn.style.display = '';
-  drillBtn.textContent = 'Drill ' + v.inf;
+  drillBtn.textContent = tx('grammar.drillVerb', { verb: v.inf });
   drillBtn.onclick = () => startVerbDrill([v], currentVerbTenses(), 'verbs');
   showScreen('grammar-note');
 }

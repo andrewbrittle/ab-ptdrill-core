@@ -1,3 +1,4 @@
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["lang/pt.js"] = "2611070919";
 // Portuguese (as spoken in Portugal) - the language module.
 //
 // Everything about Portuguese that is a rule rather than a list lives here,
@@ -159,8 +160,21 @@ function compareTyped(accepted, given) {
   return { match, wrongArticle };
 }
 
+// ---------- Speech ----------
+// A European Portuguese voice is wanted (pt-PT): a Brazilian voice sounds
+// very different (open vowels, "tch" for ti/di), so it's only a fallback,
+// and the app says so. iPhone/iPad: Joana or Catarina (pt-PT) can be added
+// in Settings > Accessibility > Spoken Content > Voices.
+function pickVoice(voices) {
+  const norm = v => (v.lang || '').toLowerCase().replace('_', '-');
+  const best = voices.find(v => norm(v) === 'pt-pt');
+  const other = voices.find(v => norm(v).startsWith('pt'));
+  return { voice: best || other || null, fallback: !best && !!other };
+}
+
 export default {
   code: 'pt-PT',
+  pickVoice,           // (device voices) -> { voice, fallback }: Portugal first, Brazil with a note
   numberToWords,       // 0-999 999: "mil duzentos e cinquenta"
   belowThousand,       // 0-999, feminine optional: "duas", "duzentas"
   numberToBrazilian,   // the Brazilian teens: dezesseis, dezenove

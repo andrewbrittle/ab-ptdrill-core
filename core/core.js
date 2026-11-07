@@ -1,3 +1,4 @@
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/core.js"] = "2611070919";
 // Português Drill - The core: everything the drill apps share - word lists and Groups, tile
 // selection, search, the drill modes, navigation, speech, settings, install
 // card, scores with decay and weighted picking, backup, saved sessions,

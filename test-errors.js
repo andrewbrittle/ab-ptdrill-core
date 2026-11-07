@@ -16,6 +16,19 @@
   window.addEventListener('error', function (e) {
     show('Error: ' + e.message + (e.filename ? ' (' + e.filename.split('/').pop().split('?')[0] + ':' + e.lineno + ')' : ''));
   });
+  // Every file of a test build is stamped by publish.sh; once the page has
+  // loaded, any file that's missing or from another build is named here -
+  // the usual cause is a file not uploaded with the rest.
+  var EXPECT = { stamp: "2611070919", files: ["vocab.js","grammar.js","lang/pt.js","ui/en.js","core/builder.js","core/core.js","core/questions.js","core/start.js","core/text.js","pt/app.js","pt/builder.js","pt/desk-sheets.js","pt/grammar-screen.js","pt/greeting.js","pt/numbers.js","pt/sentences.js","pt/sounds.js","pt/verbs.js"] };
+  window.addEventListener('load', function () {
+    if (!EXPECT) return;
+    var got = window.__BUILD_FILES || {}, bad = [];
+    EXPECT.files.forEach(function (f) {
+      if (!got[f]) bad.push(f + ' (missing)');
+      else if (got[f] !== EXPECT.stamp) bad.push(f + ' (from build ' + got[f] + ')');
+    });
+    if (bad.length) show('Not from this build (' + EXPECT.stamp + ') - upload these again:\n  ' + bad.join('\n  '));
+  });
   window.addEventListener('unhandledrejection', function (e) {
     show('Error: ' + ((e.reason && e.reason.message) || e.reason));
   });

@@ -1,3 +1,4 @@
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/app.js"] = "2611070919";
 // Português Drill - this app's settings for the core (2026-11-07, refactor
 // step 6). Everything the core needs to know about *this* app that isn't a
 // rule of the language (those are in lang/pt.js) or a list (vocab.js,
@@ -15,7 +16,7 @@ window.APP = {
   vocabPills: [
     // Verbs (2026-10-24): a pill in the word-list row rather than a tab of
     // its own. Its screen has its own copy of the row, with Verbs lit.
-    { label: 'Verbs', screen: 'verbs', open: () => showVerbsScreen(), rowId: 'verbs-level-row' },
+    { label: tx('verbs.title'), screen: 'verbs', open: () => showVerbsScreen(), rowId: 'verbs-level-row' },
   ],
 
   // The app's own screens, beyond the core's (word lists, drill, results,
@@ -25,7 +26,7 @@ window.APP = {
   // screen's title). vocabRoot: the word-list tab returns here if it was
   // the last one open. onShow: redraw when the screen is shown.
   screens: {
-    verbs: { root: true, label: 'Verbs', pill: 'nav-match', vocabRoot: true, open: () => showVerbsScreen(), onShow: () => { buildVerbTileGrid(); syncVerbControls(); } },
+    verbs: { root: true, label: tx('verbs.title'), pill: 'nav-match', vocabRoot: true, open: () => showVerbsScreen(), onShow: () => { buildVerbTileGrid(); syncVerbControls(); } },
     build: { root: true, pill: 'nav-build', onShow: () => sbRefreshPanels() },
     numbers: { root: true, pill: 'nav-numbers', onShow: () => syncNumbersControls() },
     grammar: { root: true, pill: 'nav-grammar', onShow: () => setupCatBar(document.getElementById('contraction-swatch'), getCategoryBandCounts(GRAMMAR.contractions.map(contractionItem))) },
@@ -35,9 +36,5 @@ window.APP = {
   },
 
   // Shown under "Tap to hear" when the device has no Portugal voice.
-  // (These move to the interface-text table in step 8.)
-  voiceNotes: {
-    fallback: "Only a Brazilian Portuguese voice was found on this device, so words will sound Brazilian - add a Portugal (pt-PT) voice in your phone's spoken content / text-to-speech settings.",
-    none: "This device doesn't seem to have a Portuguese voice installed - add one (Portugal) in your phone's spoken content / text-to-speech settings.",
-  },
+  voiceNotes: { fallback: tx('voice.brazilOnly'), none: tx('voice.none') },
 };

@@ -1,3 +1,4 @@
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/desk-sheets.js"] = "2611070919";
 // Português Drill - Portuguese: the printable desk sheets.
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.
 

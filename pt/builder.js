@@ -1,6 +1,9 @@
-// Português Drill - Portuguese: the sentence builder, sentence challenge and reading challenge.
-// (Step 7 of the refactor splits the builder's mechanics into the core.)
-// Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/builder.js"] = "2611070919";
+// Português Drill - Portuguese: the sentence builder's modes - Doing, Going,
+// Being, Giving - and the Portuguese rules behind them: the cards, verb
+// forms and agreement, word order (já before the verb), the English, the
+// teacher's notes, and the challenges. The mechanics (picking, Check, one
+// more go, part scores) are in core/builder.js (refactor step 7, 2026-11-07).
 
 // ==== SENTENCE BUILDER + CHALLENGES (2026-10-24, from the Japanese app) ====
 // Principles carried over (see HANDOVER-sentence-builder.md): words stick in
@@ -21,10 +24,10 @@ const SB_DECOY = [2, 2, 0, 4, 3];       // the person each is most often mixed u
 const SB_DECOY_BEING = [3, 2, 4, 0, 2]; // in Being: singular <-> plural
 const SB_TENSE_FROM_GROUP = { hab: 'pres', fut: 'fut', past: 'pret' };
 const SB_MODES = {
-  do: { label: 'Doing', slots: [['who', 'Who'], ['verb', 'Verb'], ['what', 'What'], ['where', 'Where'], ['with', 'With whom'], ['when', 'When']] },
-  go: { label: 'Going', slots: [['who', 'Who'], ['verb', 'Go: ir'], ['whereTo', 'Where to'], ['how', 'How'], ['with', 'With whom'], ['when', 'When']] },
-  being: { label: 'Being', slots: [['who', 'Who / what'], ['verb', 'ser or estar'], ['adj', 'Describing word']] },
-  give: { label: 'Giving', slots: [['who', 'Who'], ['verb', 'Verb'], ['what', 'What'], ['toWhom', 'To whom'], ['when', 'When']] },
+  do: { label: tx('sb.doing'), slots: [['who', tx('part.who')], ['verb', tx('part.verb')], ['what', tx('part.what')], ['where', tx('part.where')], ['with', tx('part.with')], ['when', tx('part.when')]] },
+  go: { label: tx('sb.going'), slots: [['who', tx('part.who')], ['verb', tx('part.goIr')], ['whereTo', tx('part.whereTo')], ['how', tx('part.how')], ['with', tx('part.with')], ['when', tx('part.when')]] },
+  being: { label: tx('sb.being'), slots: [['who', tx('part.whoWhat')], ['verb', tx('part.serEstarLower')], ['adj', tx('part.adj')]] },
+  give: { label: tx('sb.giving'), slots: [['who', tx('part.who')], ['verb', tx('part.verb')], ['what', tx('part.what')], ['toWhom', tx('part.toWhom')], ['when', tx('part.when')]] },
 };
 // Already / not yet (2026-11-05, from the Japanese app's もう / まだ): já and
 // ainda não sit in the When column but go BEFORE the verb, with the past:
@@ -52,11 +55,6 @@ function sbRecipients() {
   });
   return out;
 }
-let sbMode = 'do', sbChallenge = false, sbReverse = false;
-let sbSel = {}, sbTarget = null, sbTry = 0, sbDone = false, sbResult = null, sbCols = null;
-let sbStats = { right: 0, total: 0 };
-const sbSlots = () => SB_MODES[sbMode].slots.map(([id, role]) => ({ id, role }));
-const sbSlotIdx = id => sbSlots().findIndex(s => s.id === id);
 
 // --- cards ---------------------------------------------------------------
 function sbWhoPool() {
@@ -225,31 +223,31 @@ function sbNotes(sel) {
   const notes = [];
   const f = sel.form;
   if (sbMode === 'being') {
-    if (sel.adj && sel.verb && sel.adj.be !== sel.verb.pt) notes.push(sel.adj.be === 'estar' ? `${sel.adj.pt} is how someone or something is right now - estar` : `${sel.adj.pt} is what someone or something is like - ser`);
-    if (f && sel.who && f.p !== sel.who.p) notes.push(`${f.pt} is the ${SB_PERSON_LABEL[f.p]} form - for ${sel.who.pt}: ${vForm(f.verb, 'pres', sel.who.p)}`);
+    if (sel.adj && sel.verb && sel.adj.be !== sel.verb.pt) notes.push(sel.adj.be === 'estar' ? tx('sbNote.isEstar', { w: sel.adj.pt }) : tx('sbNote.isSer', { w: sel.adj.pt }));
+    if (f && sel.who && f.p !== sel.who.p) notes.push(tx('sbNote.wrongPerson', { form: f.pt, person: SB_PERSON_LABEL[f.p], who: sel.who.pt, right: vForm(f.verb, 'pres', sel.who.p) }));
     if (sel.agree && sel.who) { const right = sbAdjForm(sel.adj, sel.who.g, !!sel.who.pl); if (sel.agree.pt !== right) notes.push(`${sel.who.pt} → ${right}`); }
     return notes;
   }
   const inf = sel.verb ? sel.verb.pt : 'ir';
   if (f && sel.who && f.p !== sel.who.p) {
-    notes.push(`${f.pt} is the ${SB_PERSON_LABEL[f.p]} form - for ${sel.who.pt}: ${sbFormText(inf, f.tense, sel.who.p)}`);
+    notes.push(tx('sbNote.wrongPerson', { form: f.pt, person: SB_PERSON_LABEL[f.p], who: sel.who.pt, right: sbFormText(inf, f.tense, sel.who.p) }));
   } else if (f && !sel.who && f.p !== 0 && f.p !== 3) {
-    notes.push(`${f.pt} needs someone in Who (${SB_PERSON_LABEL[f.p]})`);
+    notes.push(tx('sbNote.needsWho', { form: f.pt, person: SB_PERSON_LABEL[f.p] }));
   }
   if (f && sel.when) {
     const amb = f.tense !== 'fut' && sbFormAmbiguous(inf, f.p);
     const p = sbPersonOf(sel), g = sel.when.group;
-    if (g === 'ja' && f.tense !== 'pret' && !amb) notes.push(`${sel.when.pt} goes with the past - ${sbFormText(inf, 'pret', p)}`);
+    if (g === 'ja' && f.tense !== 'pret' && !amb) notes.push(tx('sbNote.jaPast', { when: sel.when.pt, right: sbFormText(inf, 'pret', p) }));
     else if (g === 'ja') { /* fine */ }
     else if (amb && g !== 'fut') { /* comemos: right for now and for the past */ }
-    else if (g === 'past' && f.tense !== 'pret') notes.push(`${sel.when.pt} is the past - ${sbFormText(inf, 'pret', p)}`);
-    else if (g === 'hab' && f.tense !== 'pres') notes.push(`${sel.when.pt} is a habit - the present: ${sbFormText(inf, 'pres', p)}`);
-    else if (g === 'fut' && f.tense === 'pret') notes.push(`${sel.when.pt} hasn't happened yet - ${sbFormText(inf, inf === 'ir' ? 'pres' : 'fut', p)}`);
+    else if (g === 'past' && f.tense !== 'pret') notes.push(tx('sbNote.isPast', { when: sel.when.pt, right: sbFormText(inf, 'pret', p) }));
+    else if (g === 'hab' && f.tense !== 'pres') notes.push(tx('sbNote.isHabit', { when: sel.when.pt, right: sbFormText(inf, 'pres', p) }));
+    else if (g === 'fut' && f.tense === 'pret') notes.push(tx('sbNote.notYet', { when: sel.when.pt, right: sbFormText(inf, inf === 'ir' ? 'pres' : 'fut', p) }));
   }
   if (sel.with && /^sozinh/.test(sel.with.pt) && sel.who) {
     const fem = sel.who.g === 'f', pl = sel.who.p === 3 || sel.who.p === 4;
     const right = (fem ? 'sozinha' : 'sozinho') + (pl ? 's' : '');
-    if (sel.with.pt !== right) notes.push(`for ${sel.who.pt}: ${right}`);
+    if (sel.with.pt !== right) notes.push(tx('sbNote.forWho', { who: sel.who.pt, right }));
   }
   return notes;
 }
@@ -331,122 +329,15 @@ function sbBuildColumns() {
   };
 }
 
-// --- part scores (building and reading kept apart) ------------------------
-const SB_PART_DEFS = [['who', 'Who', 1], ['verb', 'Verb', 2], ['ending', 'Verb ending', 2], ['serestar', 'Ser or estar', 2],
-  ['what', 'What', 3], ['whereTo', 'Where to', 3], ['adj', 'Describing word', 3], ['agree', 'Agreement', 3],
-  ['where', 'Where', 4], ['how', 'How', 4], ['toWhom', 'To whom', 4], ['with', 'With whom', 5], ['when', 'When', 6]];
-const SB_PARTS_KEY = 'ptDrillSentenceParts', SB_PARTS_KEY_R = 'ptDrillSentencePartsR';
-let sbParts = {}, sbPartsR = {};
-try { sbParts = JSON.parse(localStorage.getItem(SB_PARTS_KEY)) || {}; } catch (e) { sbParts = {}; }
-try { sbPartsR = JSON.parse(localStorage.getItem(SB_PARTS_KEY_R)) || {}; } catch (e) { sbPartsR = {}; }
-function sbRecordPart(id, ok) {
-  const store = sbReverse ? sbPartsR : sbParts;
-  const e = store[id] || { r: [], n: 0 };
-  e.r.push(ok ? 1 : 0);
-  if (e.r.length > 20) e.r = e.r.slice(-20);
-  e.n++;
-  store[id] = e;
-}
-function sbSaveParts() { try { localStorage.setItem(SB_PARTS_KEY, JSON.stringify(sbParts)); localStorage.setItem(SB_PARTS_KEY_R, JSON.stringify(sbPartsR)); } catch (e) { /* fine */ } }
-function sbPartStats(rev) {
-  const store = rev ? sbPartsR : sbParts;
-  return SB_PART_DEFS.map(([id, label, slot]) => {
-    const e = store[id];
-    const pct = e && e.r.length ? Math.round(100 * e.r.reduce((a, b) => a + b, 0) / e.r.length) : null;
-    return { id, label, slot, pct, n: e ? e.n : 0 };
-  });
-}
-function sbWeakestPart(rev) {
-  const ok = sbPartStats(rev).filter(x => x.n >= 5 && x.pct !== null).sort((a, b) => a.pct - b.pct);
-  return ok.length && ok[0].pct < 100 ? ok[0] : null;
-}
-function sbPartsPanelHtml(rev) {
-  const stats = sbPartStats(rev).filter(x => x.n > 0);
-  if (!stats.length) return '';
-  const rows = stats.map(x => {
-    const few = x.n < 5;
-    return `<div class="sbp-row${few ? ' sbp-few' : ''}" style="--slot:var(--slot-${x.slot})"><span class="sbp-label">${x.label}</span>` +
-      `<span class="sbp-bar"><span style="width:${x.pct}%"></span></span><span class="sbp-pct">${few ? '–' : x.pct + '%'}</span></div>`;
-  }).join('');
-  const weak = sbWeakestPart(rev);
-  return `<div class="sbp-panel"><div class="sbp-title">${rev ? 'Reading' : 'Challenge'} parts - right first time</div>${rows}` +
-    `<div class="sbp-note">${weak ? `Most room to grow: <strong>${weak.label}</strong>. ` : ''}Over your last 20 tries of each part; a dash until there have been 5.</div></div>`;
-}
+const SB_PART_DEFS = [['who', tx('part.who'), 1], ['verb', tx('part.verb'), 2], ['ending', tx('part.ending'), 2], ['serestar', tx('part.serEstar'), 2],
+  ['what', tx('part.what'), 3], ['whereTo', tx('part.whereTo'), 3], ['adj', tx('part.adj'), 3], ['agree', tx('part.agree'), 3],
+  ['where', tx('part.where'), 4], ['how', tx('part.how'), 4], ['toWhom', tx('part.toWhom'), 4], ['with', tx('part.with'), 5], ['when', tx('part.when'), 6]];
 
-// --- screen --------------------------------------------------------------
-function sbRefreshPanels() {
-  const panel = document.getElementById('sb-parts-panel');
-  if (panel) panel.innerHTML = sbPartsPanelHtml(false) + sbPartsPanelHtml(true);
-}
 function showBuildPage() {
   sbRefreshPanels();
   renderSentence('grammar-sentence');
   showScreen('build');
 }
-// challenge: false (builder) | true (sentence challenge) | 'reverse' (reading)
-function showSentenceBuilder(challenge) {
-  sbReverse = challenge === 'reverse';
-  sbChallenge = !!challenge;
-  if (sbReverse && sbMode === 'being') sbMode = 'do';
-  // Every entry starts clean (a finished challenge once locked the builder).
-  sbSel = {}; sbTarget = null; sbTry = 0; sbDone = false; sbResult = null;
-  const t = document.getElementById('sb-title');
-  if (t) t.textContent = sbReverse ? 'Reading challenge' : sbChallenge ? 'Sentence challenge' : 'Sentence builder';
-  sbStart();
-  showScreen('sb');
-  window.scrollTo(0, 0);
-}
-function sbStart() { if (sbChallenge) sbNewChallenge(); else { sbSel = {}; if (sbMode === 'go') sbSel.verb = SB_IR; sbBuildColumns(); sbRender(); } }
-function sbSetMode(m) {
-  if (sbMode === m || (sbReverse && m === 'being')) return;
-  sbMode = m; sbSel = {}; sbTarget = null; sbTry = 0; sbDone = false; sbResult = null;
-  sbStart();
-}
-function sbNewChallenge() {
-  sbTarget = sbNewTarget();
-  sbSel = {}; sbTry = 0; sbDone = false; sbResult = null;
-  if (sbMode === 'go') sbSel.verb = SB_IR;
-  sbBuildColumns();
-  sbRender();
-}
-function sbShuffle() { sbBuildColumns(); sbSel = {}; if (sbMode === 'go') sbSel.verb = SB_IR; sbRender(); }
-function sbClear() { if (sbDone) return; sbSel = {}; if (sbMode === 'go') sbSel.verb = SB_IR; sbResult = null; sbRender(); }
-const sbLocked = id => sbResult && sbResult[id] === 'right';
-function sbPick(id, card) {
-  if (sbDone || sbLocked(id)) return;
-  const same = sbSel[id] && sbSel[id].pt === card.pt;
-  if (same) delete sbSel[id]; else sbSel[id] = card;
-  if (sbResult) delete sbResult[id];
-  if (id === 'verb' && (sbMode === 'do' || sbMode === 'give')) {
-    delete sbSel.form;
-    if (sbSel.what && !(sbSel.verb && sbSel.verb.act.objs.some(o => o[0] === sbSel.what.pt))) delete sbSel.what;
-    if (sbResult) { delete sbResult.ending; delete sbResult.what; }
-  }
-  if (id === 'who' && sbMode === 'being' && !same) {
-    // A new subject has its own describing words.
-    if (sbSel.adj && !sbAdjCardsFor(sbSel.who).some(a => a.pt === sbSel.adj.pt)) { delete sbSel.adj; delete sbSel.agree; }
-  }
-  if (id === 'adj') { delete sbSel.agree; if (sbResult) delete sbResult.agree; }
-  if (id === 'verb' && sbMode === 'being') { delete sbSel.form; if (sbResult) delete sbResult.ending; }
-  sbRender();
-  if (!same && !sbReverse) speakTarget(card.pt);
-}
-function sbPickForm(f) {
-  if (sbDone || sbLocked('ending')) return;
-  if (sbSel.form && sbSel.form.pt === f.pt) delete sbSel.form; else sbSel.form = f;
-  if (sbResult) delete sbResult.ending;
-  sbRender();
-  if (sbSel.form && !sbReverse) speakTarget(f.pt);
-}
-function sbPickAgree(f) {
-  if (sbDone || sbLocked('agree')) return;
-  if (sbSel.agree && sbSel.agree.pt === f.pt) delete sbSel.agree; else sbSel.agree = f;
-  if (sbResult) delete sbResult.agree;
-  sbRender();
-  if (sbSel.agree) speakTarget(f.pt);
-}
-function sbSay() { const t = sbPtOf(sbSel); if (t) speakTarget(t); }
-function sbSayTarget() { if (sbTarget) speakTarget(sbTarget.pt); }
 // Reading: the form buttons show what each form means in English.
 function sbFormEnLabel(f) {
   const inf = sbSel.verb ? sbSel.verb.pt : 'ir';
@@ -457,206 +348,113 @@ function sbFormEnLabel(f) {
   if (f.tense === 'fut') return `${who} ${sbBe(f.p)} going to ${forms[0]}`;
   return `${who} ${f.p === 2 ? forms[1] : forms[0]}` + (sbMode === 'go' ? ` / ${sbBe(f.p)} going` : '');
 }
-// Check: each part right / wrong / missing / extra; the right verb (or
-// describing word) with the wrong form is its own message.
-function sbCheck() {
-  if (!sbTarget || sbDone) return;
-  sbTry++;
-  const T = sbTarget.sel, S = sbSel, res = {}, prev = sbResult || {};
-  sbSlots().forEach(({ id }) => {
-    if (prev[id] === 'right') { res[id] = 'right'; return; }
-    if (id === 'verb' && sbMode === 'go') return; // ir is given; only its form counts
-    const t = T[id], s = S[id];
-    if (id === 'who' && sbTarget.whoOptional) { if (s) res[id] = s.pt === t.pt ? 'right' : 'wrong'; return; }
-    if (!t && !s) return;
-    if (!t) { res[id] = 'extra'; return; }
-    if (!s) { res[id] = 'missing'; return; }
-    res[id] = s.pt === t.pt ? 'right' : 'wrong';
-  });
-  const formOk = () => S.form && S.form.pt === T.form.pt && (S.form.tense === T.form.tense || !sbReverse || sbFormAmbiguous(T.verb.pt, T.form.p));
-  if (sbMode === 'go') res.ending = prev.ending === 'right' || formOk() ? 'right' : (S.form ? 'wrong' : 'missing');
-  else if (res.verb === 'right') res.ending = prev.ending === 'right' || formOk() ? 'right' : 'ending';
-  if (sbMode === 'being' && res.adj === 'right') res.agree = prev.agree === 'right' || (S.agree && S.agree.pt === T.agree.pt) ? 'right' : 'ending';
-  if (sbTry === 1) {
-    const counted = Object.keys(res);
-    sbStats.total += counted.length; sbStats.right += counted.filter(k => res[k] === 'right').length;
-    Object.entries(res).forEach(([id, r]) => {
-      const part = sbMode === 'being' && id === 'verb' ? 'serestar' : id;
-      sbRecordPart(part, r === 'right');
-    });
-    sbSaveParts();
-  }
-  // Wrong picks come off, so the second go starts from what's right.
-  if (sbTry < 2) Object.keys(res).forEach(id => {
-    if (res[id] === 'wrong' || res[id] === 'extra') {
-      if (id === 'ending') { delete S.form; return; }
-      delete S[id];
-      if (id === 'verb') { delete S.form; delete S.what; }
-      if (id === 'adj') delete S.agree;
-    }
-    if (res[id] === 'ending') { if (id === 'agree') delete S.agree; else delete S.form; }
-  });
-  sbResult = res;
-  const allRight = Object.values(res).every(r => r === 'right');
-  if (allRight || sbTry >= 2) { sbDone = true; sbSayTarget(); }
-  sbRender();
-}
-function sbRender() {
-  const top = document.getElementById('sb-strip'), colsEl = document.getElementById('sb-cols');
-  if (!top || !colsEl) return;
-  document.querySelectorAll('#sb-mode-row button').forEach(b => {
-    b.classList.toggle('active', b.dataset.mode === sbMode);
-    b.disabled = sbReverse && b.dataset.mode === 'being';
-  });
-  const chunks = sbChunks(sbSel);
-  const mark = c => {
-    let id = c.id;
-    if (id === 'verb' && sbResult && (sbResult.ending === 'ending' || sbMode === 'go')) id = 'ending';
-    if (id === 'adj' && sbResult && sbResult.agree === 'ending') id = 'agree';
-    return sbResult && sbResult[id] ? ' sb-' + sbResult[id] : '';
-  };
-  const label = id => (sbSlots().find(x => x.id === id) || {}).role || id;
-  let html = '';
-  if (sbReverse && sbTarget) {
-    html += `<div class="sb-pt sb-prompt-pt" onclick="sbSayTarget()">${escapeHtmlText(sbTarget.pt)}</div>`;
-    html += Object.keys(sbSel).some(k => sbSel[k] && !(k === 'verb' && sbMode === 'go'))
-      ? `<div class="sb-en sb-en-built">"${escapeHtmlText(sbEnOf(sbSel))}"</div>`
-      : `<div class="sb-empty">Read the sentence (tap it to hear it), then pick the English for each part - skip the columns it doesn't use.</div>`;
-  } else {
-    if (sbChallenge && sbTarget) html += `<div class="sb-prompt">"${escapeHtmlText(sbTarget.en)}"</div>`;
-    if (chunks.length) {
-      html += `<div class="sb-pt">${chunks.map((c, k) => {
-        const txt = k === 0 ? sCap(c.pt) : c.pt;
-        return `<span class="sb-chunk${c.verbOnly ? ' sb-verb-only' : ''}${mark(c)}" style="--slot:var(--slot-${c.slot + 1})">${escapeHtmlText(txt)}</span>`;
-      }).join(' ')}.</div>`;
-      if (!sbChallenge) html += `<div class="sb-en">"${escapeHtmlText(sbEnOf(sbSel))}"</div>`;
-    } else html += `<div class="sb-empty">${sbChallenge ? 'Tap a card in each column you need - skip the ones you don\'t.' : 'Tap a card from each column to build a sentence.'}</div>`;
-  }
-  const notes = !sbChallenge ? sbNotes(sbSel) : [];
-  if (notes.length) html += `<div class="sb-notes">${notes.map(escapeHtmlText).join(' · ')}</div>`;
-  if (sbChallenge && sbResult) {
-    if (sbDone) {
-      const ids = Object.keys(sbResult), n = ids.length, r = ids.filter(k => sbResult[k] === 'right').length;
-      html += sbReverse ? `<div class="sb-answer"><div class="sb-en sb-en-answer">"${escapeHtmlText(sbTarget.en)}"</div></div>`
-        : `<div class="sb-answer" onclick="sbSayTarget()"><div class="sb-pt">${escapeHtmlText(sbTarget.pt)}</div></div>`;
-      html += `<div class="sb-verdict${r === n ? ' good' : ''}">${r === n ? (sbTry === 1 ? 'All right first time!' : 'All right on the second go.') : `${r} of ${n} parts right - the answer is above.`}</div>`;
-    } else {
-      const missing = Object.keys(sbResult).filter(k => sbResult[k] === 'missing').map(k => k === 'ending' ? 'the verb form' : label(k));
-      const wrongN = Object.values(sbResult).filter(r => r === 'wrong' || r === 'extra').length;
-      const bits = [wrongN ? `${wrongN} part${wrongN === 1 ? '' : 's'} not right (taken off)` : '',
-        sbResult.ending === 'ending' ? (sbMode === 'being' ? 'right verb - check the form' : sbReverse ? 'right verb - check who and when' : 'right verb - check the form') : '',
-        sbResult.agree === 'ending' ? 'right word - check the ending (agreement)' : '',
-        missing.length ? 'missing: ' + missing.join(', ') : ''].filter(Boolean);
-      html += `<div class="sb-verdict">${bits.join(' · ')} - one more go.</div>`;
-    }
-  }
-  const btn = (text, fn, main) => `<button type="button" class="ds-btn${main ? ' ds-btn-main' : ''}" onclick="${fn}">${text}</button>`;
-  html += '<div class="ds-buttons sb-buttons">';
-  if (sbReverse) html += btn('🔊 Hear it', 'sbSayTarget()');
-  else if (chunks.length) html += btn('🔊 Hear it', 'sbSay()');
-  if (sbChallenge) html += sbDone ? btn('Next →', 'sbNewChallenge()', true) : btn(sbTry ? 'Check again' : 'Check', 'sbCheck()', true) + btn('Clear', 'sbClear()');
-  else html += btn('Clear', 'sbClear()') + btn('Shuffle words', 'sbShuffle()');
-  html += '</div>';
-  if (sbChallenge && sbStats.total) {
-    const weak = sbWeakestPart(sbReverse);
-    html += `<div class="sb-stats">This session: ${sbStats.right} of ${sbStats.total} parts right first time${weak ? ` · most room to grow: ${weak.label} (${weak.pct}%)` : ''}</div>`;
-  }
-  top.innerHTML = html;
 
-  // Columns
-  const T = sbDone && sbTarget ? sbTarget.sel : null;
-  colsEl.innerHTML = '';
-  colsEl.classList.toggle('sb-rev', sbReverse);
-  const column = (id, note, fill) => {
-    const i = sbSlotIdx(id);
-    const col = document.createElement('div');
-    col.className = 'ds-col sb-col';
-    col.style.setProperty('--slot', `var(--slot-${i + 1})`);
-    col.innerHTML = `<div class="ds-head"><div class="ds-head-top"><span class="ds-num">${i + 1}</span><span class="ds-role">${escapeHtmlText(sbSlots()[i].role)}</span></div></div>` +
-      (note && !sbReverse ? `<div class="ds-note">${escapeHtmlText(note)}</div>` : '');
-    fill(col);
-    colsEl.appendChild(col);
-  };
-  const card = (col, id, it) => {
-    const el = document.createElement('div');
-    const picked = sbSel[id] && sbSel[id].pt === it.pt;
-    const isAns = T && T[id] && T[id].pt === it.pt;
-    el.className = 'ds-card sb-card' + (picked ? ' sb-picked' : '') + (picked && sbResult && sbResult[id] === 'right' ? ' sb-ok' : '') + (isAns && !picked ? ' sb-should' : '');
-    const len = it.pt.length;
-    el.innerHTML = `<div class="ds-pt${len >= 20 ? ' xlong' : len >= 14 ? ' long' : ''}">${escapeHtmlText(it.pt)}</div><div class="ds-en">${escapeHtmlText(it.en)}</div>`;
-    el.onclick = () => sbPick(id, it);
-    col.appendChild(el);
-  };
-  const groupHead = (col, text) => { const h = document.createElement('div'); h.className = 'ds-group-head'; h.innerHTML = `<span class="ds-pt">${escapeHtmlText(text)}</span>`; col.appendChild(h); };
-  const formBox = (col, head, forms, chosen, ans, onPick, labelOf) => {
-    const box = document.createElement('div');
-    box.className = 'sb-forms';
-    box.innerHTML = `<div class="sb-forms-head">${escapeHtmlText(head)}</div>`;
-    forms.forEach(f => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      const on = chosen && chosen.pt === f.pt && (!sbReverse || chosen.tense === f.tense);
-      b.className = 'sb-form' + (on ? ' active' : '') + (ans && ans.pt === f.pt && !on ? ' sb-should' : '');
-      b.textContent = labelOf ? labelOf(f) : f.pt;
-      b.onclick = () => onPick(f);
-      box.appendChild(b);
-    });
-    col.appendChild(box);
-  };
-  const whenCol = () => column('when', 'match the verb to the time', col => sbCols.when.forEach(g => {
-    groupHead(col, sbReverse ? { hab: 'Habits', fut: 'Plans', past: 'Done', ja: 'Already / not yet' }[g.group] : { hab: 'Habits → now', fut: 'Plans → going to', past: 'Done → past', ja: 'Already / not yet → past, before the verb' }[g.group]);
+// --- the modes, registered with the core (core/builder.js) ---------------
+// The When column, shared by Doing, Going and Giving.
+function sbWhenColumn(ui) {
+  const { column, card, groupHead } = ui;
+  column('when', tx('sbCol.when'), col => sbCols.when.forEach(g => {
+    groupHead(col, tx((sbReverse ? 'sbWhen.' : 'sbWhenHint.') + g.group));
     g.items.forEach(c => card(col, 'when', c));
   }));
-  const p = sbSel.who ? sbSel.who.p : 0;
-  if (sbMode === 'being') {
-    column('who', 'people or things', col => {
-      groupHead(col, 'People'); sbCols.people.forEach(c => card(col, 'who', c));
-      groupHead(col, 'Things'); sbCols.things.forEach(c => card(col, 'who', c));
-    });
-    column('verb', 'ser: what it\'s like · estar: how it is now', col => {
-      SB_BE_CARDS.forEach(c => card(col, 'verb', c));
-      if (sbSel.verb) formBox(col, sbSel.verb.pt + ' - pick the form', sbBeFormsFor(p).filter(f => f.verb === sbSel.verb.pt), sbSel.form, T && T.form, sbPickForm);
-    });
-    column('adj', 'it agrees: novo, nova, novos, novas', col => {
-      if (!sbSel.who) { col.insertAdjacentHTML('beforeend', '<div class="sb-hint">Pick who or what first - the words that suit it show here.</div>'); return; }
-      sbAdjCardsFor(sbSel.who).forEach(c => card(col, 'adj', c));
-      if (sbSel.adj) formBox(col, 'the ending - make it agree', sbAdjFormsFor(sbSel.adj), sbSel.agree, T && T.agree, sbPickAgree);
-    });
-    return;
-  }
-  column('who', 'eu and nós can be left out', col => sbCols.who.forEach(c => card(col, 'who', c)));
-  if (sbMode === 'give') {
-    column('verb', 'then pick the form', col => {
-      sbCols.giveVerbs.forEach(c => card(col, 'verb', c));
-      if (!sbSel.verb) return;
-      formBox(col, sbReverse ? 'who, and when?' : sbSel.verb.pt + ' - now, past, going to', sbFormsFor(sbSel.verb.pt, sbReverse && sbTarget ? sbTarget.sel.form.p : p), sbSel.form, T && T.form, sbPickForm, sbReverse ? sbFormEnLabel : null);
-    });
-    column('what', sbSel.verb && sbSel.verb.act.askFor ? 'pedir X a alguém = ask someone for X' : '', col => {
-      if (!sbSel.verb) { col.insertAdjacentHTML('beforeend', '<div class="sb-hint">Pick a verb first - the things you can give, send or show appear here.</div>'); return; }
-      sbSel.verb.act.objs.map(sbWhatCard).forEach(c => card(col, 'what', c));
-    });
-    column('toWhom', 'a + o = ao, a + a = à, a + os = aos', col => sbCols.toWhom.forEach(c => card(col, 'toWhom', c)));
-    whenCol();
-    return;
-  }
-  if (sbMode === 'go') {
-    column('verb', 'plans use the present: vou amanhã', col => {
-      formBox(col, sbReverse ? 'who, and when?' : 'pick the form', sbFormsFor('ir', sbReverse && sbTarget ? sbTarget.sel.form.p : p), sbSel.form, T && T.form, sbPickForm, sbReverse ? sbFormEnLabel : null);
-    });
-    column('whereTo', 'a + o = ao, a + a = à; cities: a Lisboa', col => sbCols.whereTo.forEach(c => card(col, 'whereTo', c)));
-    column('how', 'de + transport, but a pé', col => sbCols.how.forEach(c => card(col, 'how', c)));
-  } else {
-    column('verb', 'then pick the form', col => {
+}
+// What a new verb clears: its forms, and a What it doesn't go with.
+function sbVerbPicked(id) {
+  if (id !== 'verb') return;
+  delete sbSel.form;
+  if (sbSel.what && !(sbSel.verb && sbSel.verb.act.objs.some(o => o[0] === sbSel.what.pt))) delete sbSel.what;
+  if (sbResult) { delete sbResult.ending; delete sbResult.what; }
+}
+const sbEndingNote = rev => rev ? tx('sb.checkWhoWhen') : tx('sb.checkTheForm');
+const sbModeBase = id => ({ id, label: SB_MODES[id].label, slots: SB_MODES[id].slots, formSlot: 'verb' });
+registerBuilderMode(Object.assign(sbModeBase('do'), {
+  onPick: sbVerbPicked, endingNote: sbEndingNote,
+  draw(ui) {
+    const { column, card, groupHead, formBox, T, p } = ui;
+    column('who', tx('sbCol.who'), col => sbCols.who.forEach(c => card(col, 'who', c)));
+    column('verb', tx('sbCol.verb'), col => {
       sbCols.verbs.forEach(c => card(col, 'verb', c));
       if (!sbSel.verb) return;
-      formBox(col, sbReverse ? 'who, and when?' : sbSel.verb.pt + ' - now, past, going to', sbFormsFor(sbSel.verb.pt, sbReverse && sbTarget ? sbTarget.sel.form.p : p), sbSel.form, T && T.form, sbPickForm, sbReverse ? sbFormEnLabel : null);
+      formBox(col, sbReverse ? tx('sbForms.whoWhen') : tx('sbForms.verb', { verb: sbSel.verb.pt }), sbFormsFor(sbSel.verb.pt, sbReverse && sbTarget ? sbTarget.sel.form.p : p), sbSel.form, T && T.form, sbPickForm, sbReverse ? sbFormEnLabel : null);
     });
     column('what', '', col => {
-      if (!sbSel.verb) { col.insertAdjacentHTML('beforeend', '<div class="sb-hint">Pick a verb first - the things you can do with it show here.</div>'); return; }
+      if (!sbSel.verb) { col.insertAdjacentHTML('beforeend', `<div class="sb-hint">${tx('sbHint.verbFirstDo')}</div>`); return; }
       sbSel.verb.act.objs.map(sbWhatCard).forEach(c => card(col, 'what', c));
     });
-    column('where', 'em + o = no, em + a = na', col => sbCols.where.forEach(c => card(col, 'where', c)));
-  }
-  column('with', 'sozinha for a woman', col => sbCols.with.forEach(c => card(col, 'with', c)));
-  whenCol();
-}
+    column('where', tx('sbCol.where'), col => sbCols.where.forEach(c => card(col, 'where', c)));
+    column('with', tx('sbCol.with'), col => sbCols.with.forEach(c => card(col, 'with', c)));
+    sbWhenColumn(ui);
+  },
+}));
+registerBuilderMode(Object.assign(sbModeBase('go'), {
+  // ir is given; only its form is chosen and checked.
+  preset: sel => { sel.verb = SB_IR; }, fixed: ['verb'], formAlwaysChecked: true, endingNote: sbEndingNote,
+  draw(ui) {
+    const { column, card, groupHead, formBox, T, p } = ui;
+    column('who', tx('sbCol.who'), col => sbCols.who.forEach(c => card(col, 'who', c)));
+    column('verb', tx('sbCol.goVerb'), col => {
+      formBox(col, sbReverse ? tx('sbForms.whoWhen') : tx('sbForms.pick'), sbFormsFor('ir', sbReverse && sbTarget ? sbTarget.sel.form.p : p), sbSel.form, T && T.form, sbPickForm, sbReverse ? sbFormEnLabel : null);
+    });
+    column('whereTo', tx('sbCol.whereTo'), col => sbCols.whereTo.forEach(c => card(col, 'whereTo', c)));
+    column('how', tx('sbCol.how'), col => sbCols.how.forEach(c => card(col, 'how', c)));
+    column('with', tx('sbCol.with'), col => sbCols.with.forEach(c => card(col, 'with', c)));
+    sbWhenColumn(ui);
+  },
+}));
+registerBuilderMode(Object.assign(sbModeBase('being'), {
+  // No reading challenge for Being; ser or estar is scored as its own part.
+  reading: false, agreeSlot: 'adj', partFor: id => id === 'verb' ? 'serestar' : id,
+  onPick(id, _card, same) {
+    if (id === 'who' && !same) {
+      // A new subject has its own describing words.
+      if (sbSel.adj && !sbAdjCardsFor(sbSel.who).some(a => a.pt === sbSel.adj.pt)) { delete sbSel.adj; delete sbSel.agree; }
+    }
+    if (id === 'adj') { delete sbSel.agree; if (sbResult) delete sbResult.agree; }
+    if (id === 'verb') { delete sbSel.form; if (sbResult) delete sbResult.ending; }
+  },
+  draw(ui) {
+    const { column, card, groupHead, formBox, T, p } = ui;
+    column('who', tx('sbCol.beingWho'), col => {
+      groupHead(col, tx('sbGroup.people')); sbCols.people.forEach(c => card(col, 'who', c));
+      groupHead(col, tx('sbGroup.things')); sbCols.things.forEach(c => card(col, 'who', c));
+    });
+    column('verb', tx('sbCol.beingVerb'), col => {
+      SB_BE_CARDS.forEach(c => card(col, 'verb', c));
+      if (sbSel.verb) formBox(col, tx('sbForms.beingVerb', { verb: sbSel.verb.pt }), sbBeFormsFor(p).filter(f => f.verb === sbSel.verb.pt), sbSel.form, T && T.form, sbPickForm);
+    });
+    column('adj', tx('sbCol.adj'), col => {
+      if (!sbSel.who) { col.insertAdjacentHTML('beforeend', `<div class="sb-hint">${tx('sbHint.whoFirst')}</div>`); return; }
+      sbAdjCardsFor(sbSel.who).forEach(c => card(col, 'adj', c));
+      if (sbSel.adj) formBox(col, tx('sbForms.agree'), sbAdjFormsFor(sbSel.adj), sbSel.agree, T && T.agree, sbPickAgree);
+    });
+  },
+}));
+registerBuilderMode(Object.assign(sbModeBase('give'), {
+  onPick: sbVerbPicked, endingNote: sbEndingNote,
+  draw(ui) {
+    const { column, card, groupHead, formBox, T, p } = ui;
+    column('who', tx('sbCol.who'), col => sbCols.who.forEach(c => card(col, 'who', c)));
+    column('verb', tx('sbCol.verb'), col => {
+      sbCols.giveVerbs.forEach(c => card(col, 'verb', c));
+      if (!sbSel.verb) return;
+      formBox(col, sbReverse ? tx('sbForms.whoWhen') : tx('sbForms.verb', { verb: sbSel.verb.pt }), sbFormsFor(sbSel.verb.pt, sbReverse && sbTarget ? sbTarget.sel.form.p : p), sbSel.form, T && T.form, sbPickForm, sbReverse ? sbFormEnLabel : null);
+    });
+    column('what', sbSel.verb && sbSel.verb.act.askFor ? tx('sbCol.askFor') : '', col => {
+      if (!sbSel.verb) { col.insertAdjacentHTML('beforeend', `<div class="sb-hint">${tx('sbHint.verbFirstGive')}</div>`); return; }
+      sbSel.verb.act.objs.map(sbWhatCard).forEach(c => card(col, 'what', c));
+    });
+    column('toWhom', tx('sbCol.toWhom'), col => sbCols.toWhom.forEach(c => card(col, 'toWhom', c)));
+    sbWhenColumn(ui);
+  },
+}));
+// Portuguese's builder rules, for every mode.
+setBuilderLanguage({
+  assemble: sbPtOf, chunks: sbChunks, english: sbEnOf, notes: sbNotes,
+  newTarget: sbNewTarget, buildColumns: sbBuildColumns,
+  // A form is right if it's the same word - and in reading, the same tense
+  // too, unless the word is both (comemos: we eat / we ate).
+  formsMatch: (sf, tf, T) => sf.pt === tf.pt && (sf.tense === tf.tense || !sbReverse || sbFormAmbiguous(T.verb.pt, tf.p)),
+  // A wrong pick that comes off takes what hangs on it too.
+  clearWith: { verb: ['form', 'what'], adj: ['agree'] },
+  partDefs: SB_PART_DEFS,
+});

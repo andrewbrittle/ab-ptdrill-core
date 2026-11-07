@@ -1,3 +1,4 @@
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/sounds.js"] = "2611070919";
 // Português Drill - Portuguese: the Sounds alike drill (pairs from grammar.js).
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.
 
@@ -38,12 +39,12 @@ function renderSoundQuestion(q, charDisplay, container) {
     const say = () => speakTarget(q.answer);
     charDisplay.innerHTML = `<button type="button" class="listen-play" aria-label="Play again">${LISTEN_ICON}</button>`;
     charDisplay.querySelector('.listen-play').onclick = say;
-    document.getElementById('q-prompt').textContent = 'Which word did you hear?';
+    document.getElementById('q-prompt').textContent = tx('sounds.whichHeard');
     setTimeout(() => { if (deck[current] === q && !answered) say(); }, 120);
   } else {
     charDisplay.textContent = q.en;
     charDisplay.style.fontSize = promptFontSize(q.en);
-    document.getElementById('q-prompt').textContent = 'Which one means this?';
+    document.getElementById('q-prompt').textContent = tx('sounds.whichMeans');
   }
   q.pair.forEach((w, idx) => {
     const btn = document.createElement('button');
@@ -72,7 +73,7 @@ function revealSoundPair() {
 // The Sounds alike question type (registered with the core, see
 // core/questions.js).
 registerQuestionType({
-  id: 'sound', badge: 'Sounds alike', scoring: 'item',
+  id: 'sound', badge: tx('sounds.title'), scoring: 'item',
   render: (q, ui) => renderSoundQuestion(q, ui.charDisplay, ui.container),
   reveal: () => revealSoundPair(),
 });

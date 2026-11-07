@@ -1,3 +1,4 @@
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/sentences.js"] = "2611070919";
 // Português Drill - Portuguese: the sentence generator (greeting card and Frases).
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.
 

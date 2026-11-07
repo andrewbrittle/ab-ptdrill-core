@@ -1,3 +1,4 @@
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/numbers.js"] = "2611070919";
 // Português Drill - Portuguese: the Números screen - number and time challenges and look-ups
 // (the words themselves come from LANG).
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.
@@ -96,7 +97,7 @@ function numberQuestion(n) {
     br: br !== words ? br : '',
     answer: words,
     answerEn: String(n),
-    promptHtml: 'How do you say this number?',
+    promptHtml: tx('numbers.howNumber'),
     options: shuffle([words, ...numberDistractors(n).map(LANG.numberToWords)]).map(f => ({ jp: f })),
     scoreKey: 'numbers-consistency',
     groupKey: 'numbers',
@@ -114,12 +115,12 @@ function timeQuestion(t) {
     alt: [],
     answer: words,
     answerEn: formatTimeShown(t.h, t.m, t.frame, t.style),
-    promptHtml: t.style === 'timetable' ? '<b>Timetable</b> — how is this time announced?' : 'How do you say this time?',
+    promptHtml: t.style === 'timetable' ? tx('numbers.howTimetable') : tx('numbers.howTime'),
     options: shuffle([words, ...timeDistractors(t)]).map(f => ({ jp: f })),
     scoreKey: 'times-consistency',
     groupKey: 'times',
     speakAs: words,
-    note: t.style === 'everyday' && t.m > 30 && t.m % 5 === 0 ? 'Past the half-hour, Portugal counts down to the next hour with menos.' : '',
+    note: t.style === 'everyday' && t.m > 30 && t.m % 5 === 0 ? tx('numbers.menosNote') : '',
     answerMode: numbersAnswerMode(),
   };
 }
@@ -193,10 +194,10 @@ function updateNumberTool() {
   const raw = input.value;
   if (raw === '') { output.innerHTML = ''; return; }
   const n = Math.floor(Number(raw));
-  if (!Number.isFinite(n) || n < 0 || n > 999999) { output.innerHTML = '<span class="tool-sub">Enter a number from 0 to 999 999</span>'; return; }
+  if (!Number.isFinite(n) || n < 0 || n > 999999) { output.innerHTML = `<span class="tool-sub">${tx('numbers.enterRange')}</span>`; return; }
   const words = LANG.numberToWords(n), br = LANG.numberToBrazilian(words);
   output.innerHTML = `<span class="tool-pt" data-say="${escapeHtmlText(words)}">${escapeHtmlText(words)}</span>` +
-    (br !== words ? `<span class="tool-sub">Brazil: ${escapeHtmlText(br)}</span>` : '');
+    (br !== words ? `<span class="tool-sub">${tx('tiles.brazil', { w: escapeHtmlText(br) })}</span>` : '');
   output.querySelector('.tool-pt').onclick = e => speakTarget(e.currentTarget.dataset.say);
 }
 function populateTimeToolSelects() {

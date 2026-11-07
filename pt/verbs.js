@@ -1,3 +1,4 @@
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/verbs.js"] = "2611070919";
 // Português Drill - Portuguese: verbs (endings, irregulars, English prompts), the verb and
 // contraction drills, and the Verbs screen.
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.
@@ -112,7 +113,7 @@ function buildVerbQuestion(cell) {
     speakAs: GRAMMAR.persons[p].pt.split('/')[0] + ' ' + form,
     note: (v.notes && v.notes[tense]) ||
       (tense === 'pret' && p === 3 && verbPattern(v) === 'ar' && !(v.forms && v.forms.pret)
-        ? `In Portugal the past nós form has an accent: ${form} (present: ${conjugate(v, 'pres', 3).form}).` : ''),
+        ? tx('verbs.nosAccent', { past: form, present: conjugate(v, 'pres', 3).form }) : ''),
   };
 }
 function startVerbDrill(verbs, tenses, origin) {
@@ -226,7 +227,7 @@ function toggleVerbTense(key) {
   buildVerbTileGrid();
   syncVerbControls();
 }
-const VERB_GROUP_LABELS = { irr: 'Irregular', ar: 'Regular -ar', er: 'Regular -er', ir: 'Regular -ir' };
+const VERB_GROUP_LABELS = { irr: tx('verbs.irregular'), ar: tx('verbs.regularAr'), er: tx('verbs.regularEr'), ir: tx('verbs.regularIr') };
 function verbAverageClass(v) {
   const avg = getItemsAverageScore(verbCells([v], currentVerbTenses()));
   if (avg === null) return '';
@@ -245,7 +246,7 @@ function buildVerbTileGrid() {
     const picked = verbs.filter(v => verbSelected.has(v.inf)).length;
     if (picked === verbs.length) label.classList.add('all'); else if (picked) label.classList.add('some');
     label.innerHTML = `<span class="vg-tick">✓</span>${escapeHtmlText(VERB_GROUP_LABELS[group])} · ${verbs.length}`;
-    label.title = 'Tap to select or deselect the whole group';
+    label.title = tx('verbs.groupToggle');
     label.dataset.group = group;
     label.onclick = () => toggleVerbGroup(group);
     container.appendChild(label);
@@ -317,22 +318,22 @@ function syncVerbControls() {
   if (btn) {
     btn.disabled = !n;
     const forms = Math.min(20, verbCells(GRAMMAR.verbs.filter(v => verbSelected.has(v.inf)), tenses).length);
-    btn.textContent = n ? `Drill ${forms} forms from ${n} verb${n === 1 ? '' : 's'}` : 'Pick some verbs to drill';
+    btn.textContent = n ? tx('verbs.drillN', { forms, n }) : tx('verbs.pickSome');
   }
   const allSelected = n === total && !verbRandomActive;
   const all = document.getElementById('verb-select-all-label');
-  if (all) all.textContent = allSelected ? 'Deselect all' : 'Select all';
+  if (all) all.textContent = allSelected ? tx('tiles.deselectAll') : tx('tiles.selectAll');
   const allCard = document.getElementById('verb-select-all-card');
   if (allCard) allCard.classList.toggle('selected', allSelected);
   const pick = getRandomPickSize(total);
   const rCard = document.getElementById('verb-random-card');
   if (rCard) { rCard.style.display = pick ? 'flex' : 'none'; rCard.classList.toggle('selected', verbRandomActive); }
   const rLabel = document.getElementById('verb-random-label');
-  if (rLabel) rLabel.textContent = verbRandomActive ? 'Deselect all' : `Random ${pick}`;
+  if (rLabel) rLabel.textContent = verbRandomActive ? tx('tiles.deselectAll') : tx('tiles.randomN', { n: pick });
   const cells = verbCells(GRAMMAR.verbs, tenses);
   setupCatBar(document.getElementById('verb-all-swatch'), getCategoryBandCounts(cells));
   const cnt = document.getElementById('verb-all-count');
-  if (cnt) cnt.textContent = `${total} verbs · ${cells.length.toLocaleString('en-GB')} forms`;
+  if (cnt) cnt.textContent = tx('verbs.count', { n: total, forms: cells.length.toLocaleString(tx('dates.locale')) });
   const typeCard = document.getElementById('verb-type-card');
   if (typeCard) {
     typeCard.classList.toggle('selected', !!appSettings.grammarType);
@@ -341,7 +342,7 @@ function syncVerbControls() {
   const sayCard = document.getElementById('verb-say-card');
   if (sayCard) sayCard.classList.toggle('selected', !!appSettings.grammarSay);
   const sub = document.getElementById('verb-selection-sub');
-  if (sub) sub.textContent = 'Pick tenses above and verbs below. A drill is up to 20 forms, weakest first. Hold a verb to see its table.';
+  if (sub) sub.textContent = tx('verbs.help');
 }
 function toggleSelectAllVerbs() {
   if (verbSelected.size === GRAMMAR.verbs.length && !verbRandomActive) verbSelected.clear();
@@ -371,7 +372,7 @@ function drillSelectedVerbs() {
 // The verb and contraction question types (registered with the core,
 // see core/questions.js).
 registerQuestionType({
-  id: 'verb', badge: 'Verbs', scoring: 'item',
+  id: 'verb', badge: tx('verbs.title'), scoring: 'item',
   render: (q, ui) => renderGrammarQuestion(q, ui.charDisplay, ui.container, ui.promptEl),
   prompt: (q, charDisplay, promptEl) => {
     charDisplay.style.fontSize = promptFontSize(q.char);
@@ -380,7 +381,7 @@ registerQuestionType({
   },
 });
 registerQuestionType({
-  id: 'contraction', badge: 'Contractions', scoring: 'item',
+  id: 'contraction', badge: tx('contractions.title'), scoring: 'item',
   render: (q, ui) => renderGrammarQuestion(q, ui.charDisplay, ui.container, ui.promptEl),
   prompt: (q, charDisplay, promptEl) => {
     charDisplay.style.fontSize = q.char.length <= 22 ? '30px' : '24px';

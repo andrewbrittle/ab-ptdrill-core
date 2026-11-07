@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/text.js"] = "2611072109";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/text.js"] = "2611072154";
 // Português Drill - The core: interface text (2026-11-07, refactor step 8).
 //
 // Every word on screen that isn't the language being learnt comes from a

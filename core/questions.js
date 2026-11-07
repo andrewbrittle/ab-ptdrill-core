@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/questions.js"] = "2611072109";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/questions.js"] = "2611072154";
 // Português Drill - The core: the drill screen and its question types - the registry, drawing a
 // question, choice / typed / listening / say-it answers, marking and scoring.
 // Each kind of question registers itself (word, number and time here; the

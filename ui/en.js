@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["ui/en.js"] = "2611072109";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["ui/en.js"] = "2611072154";
 // Português Drill - interface text in English, the learner's language
 // (2026-11-07, refactor step 8). Every word on screen that isn't Portuguese
 // comes from here, looked up by meaning - see core/text.js. A learner of

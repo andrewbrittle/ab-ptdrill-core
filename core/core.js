@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/core.js"] = "2611072109";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/core.js"] = "2611072154";
 // Português Drill - The core: everything the drill apps share - word lists and Groups, tile
 // selection, search, the drill modes, navigation, speech, settings, install
 // card, scores with decay and weighted picking, backup, saved sessions,
@@ -1487,7 +1487,22 @@ if (SPEECH_SUPPORTED) {
 function cancelSpeechIfBusy() {
   if (!SPEECH_SUPPORTED) return;
   const ss = window.speechSynthesis;
+  if (ss.paused) ss.resume();
   if (ss.speaking || ss.pending) ss.cancel();
+}
+// Stuck speech (2026-11-07, Vivaldi on the Pixel): after the app has been in
+// the background, Android browsers can leave speech paused or "speaking"
+// forever, and nothing is heard until the browser restarts. Coming back to
+// the app clears it, and re-primes speech on the next tap.
+if (SPEECH_SUPPORTED) {
+  const unstick = () => {
+    if (document.visibilityState !== 'visible') return;
+    const ss = window.speechSynthesis;
+    try { if (ss.speaking || ss.pending || ss.paused) ss.cancel(); ss.resume(); } catch (e) { /* nothing to clear */ }
+    speechUnlocked = false;
+  };
+  document.addEventListener('visibilitychange', unstick);
+  window.addEventListener('pageshow', unstick);
 }
 const SOUND_ICON_ON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 9 8 9 12 5 12 19 8 15 3 15" fill="currentColor"></polygon><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.5 5.5a9 9 0 0 1 0 13"></path></svg>';
 const SOUND_ICON_OFF = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 9 8 9 12 5 12 19 8 15 3 15" fill="currentColor"></polygon><line x1="16" y1="9" x2="22" y2="15"></line><line x1="22" y1="9" x2="16" y2="15"></line></svg>';
@@ -1523,6 +1538,7 @@ function toggleSoundOn() {
 // Portuguese speech, shared by the drill, tap-to-hear and hold-to-peek.
 // Says text in the target language. Which voice is right is the language's
 // call (LANG.pickVoice); a fallback voice gets a note under "Tap to hear".
+let speakGeneration = 0;
 function speakTarget(text) {
   if (!soundAllowed()) return null;
   unlockSpeech();
@@ -1539,7 +1555,24 @@ function speakTarget(text) {
   } else if (!v.voice && voices.length > 0 && desc) {
     desc.textContent = APP.voiceNotes.none;
   }
+  // If it hasn't started within 1.5 s the queue is stuck: clear it and try
+  // once more with a fresh copy (the one that never started is dropped).
+  // Only the latest word may retry, so a quick second tap is never undone.
+  const gen = ++speakGeneration;
+  let started = false;
+  utter.addEventListener('start', () => { started = true; });
   window.speechSynthesis.speak(utter);
+  setTimeout(() => {
+    if (started || gen !== speakGeneration || !soundAllowed()) return;
+    const ss = window.speechSynthesis;
+    if (!ss.pending && !ss.paused && ss.speaking) return; // playing, start event just missed
+    try {
+      ss.cancel(); ss.resume();
+      const again = new SpeechSynthesisUtterance(text);
+      again.lang = utter.lang; again.rate = utter.rate; if (utter.voice) again.voice = utter.voice;
+      ss.speak(again);
+    } catch (e) { /* speech unavailable */ }
+  }, 1500);
   return utter;
 }
 

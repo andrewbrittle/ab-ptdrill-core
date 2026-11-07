@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/grammar-screen.js"] = "2611072109";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/grammar-screen.js"] = "2611072154";
 // Português Drill - Portuguese: the Gramática screen, grammar notes and the Tables pages.
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.
 

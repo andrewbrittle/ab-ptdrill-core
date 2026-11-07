@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["vocab.js"] = "2611072109";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["vocab.js"] = "2611072154";
 // Português Drill - the word list (European Portuguese).
 // Loaded by index.html with a plain <script src="vocab.js"> BEFORE its own
 // script, which reads window.PT_DRILL_VOCAB. A .js file rather than .json so it

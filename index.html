@@ -1114,7 +1114,7 @@
       <div class="backup-status-msg" id="private-vocab-msg"></div>
     </div>
 
-    <div style="text-align:center; font-size:12px; font-weight:600; color:var(--text-dim); margin-top:0.75rem;">v261105.001 · test 2611070000</div>
+    <div style="text-align:center; font-size:12px; font-weight:600; color:var(--text-dim); margin-top:0.75rem;">v261105.001 · test 2611070843</div>
   </div>
 
 
@@ -1596,19 +1596,33 @@
 <!-- ?v= matches the version in Settings (2026-10-11): a new page always
      fetches the data files that go with it, never an older cached copy -
      bump it together with the footer version and sw.js CACHE_VERSION.
-     (Four places now: vocab.js, grammar.js, lang/pt.js and app.js.) -->
-<script src="vocab.js?v=261105.001-2611070000"></script>
+     (Every script tag below has one - vocab.js, grammar.js, lang/pt.js,
+     and each file in core/ and pt/.) -->
+<script src="vocab.js?v=261105.001-2611070843"></script>
 <!-- Verbs, contractions and grammar notes (2026-10-11). -->
-<script src="grammar.js?v=261105.001-2611070000"></script>
+<script src="grammar.js?v=261105.001-2611070843"></script>
 <!-- The language module (2026-11-06): Portuguese rules - numbers and times so
      far - as a JavaScript module, handed to the app as window.LANG. Module
      scripts and "defer" scripts run in page order once the page has loaded,
      so this always runs before app.js below. -->
 <script type="module">
-import pt from './lang/pt.js?v=261105.001-2611070000';
+import pt from './lang/pt.js?v=261105.001-2611070843';
 window.LANG = pt;
 </script>
-<!-- The app (2026-11-06: moved out of this page into app.js). -->
-<script defer src="app.js?v=261105.001-2611070000"></script>
+<!-- The app (2026-11-07: split into the shared core and the Portuguese
+     features). "defer" scripts run in this order once the page has loaded;
+     core/start.js goes last because it starts the app. -->
+<script defer src="pt/app.js?v=261105.001-2611070843"></script>
+<script defer src="core/core.js?v=261105.001-2611070843"></script>
+<script defer src="core/questions.js?v=261105.001-2611070843"></script>
+<script defer src="pt/sounds.js?v=261105.001-2611070843"></script>
+<script defer src="pt/verbs.js?v=261105.001-2611070843"></script>
+<script defer src="pt/grammar-screen.js?v=261105.001-2611070843"></script>
+<script defer src="pt/numbers.js?v=261105.001-2611070843"></script>
+<script defer src="pt/greeting.js?v=261105.001-2611070843"></script>
+<script defer src="pt/sentences.js?v=261105.001-2611070843"></script>
+<script defer src="pt/desk-sheets.js?v=261105.001-2611070843"></script>
+<script defer src="pt/builder.js?v=261105.001-2611070843"></script>
+<script defer src="core/start.js?v=261105.001-2611070843"></script>
 </body>
 </html>

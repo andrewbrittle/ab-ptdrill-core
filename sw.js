@@ -12,14 +12,25 @@
 // on activate this deletes every OTHER cache with its own prefix, and apps
 // published under the same github.io address share one cache store - a
 // shared prefix would let this app wipe the Japanese apps' offline copies.
-const CACHE_VERSION = 'pt-core-v261105-001-2611070000';
+const CACHE_VERSION = 'pt-core-v261105-001-2611070843';
 
 const PRECACHE_URLS = [
   './',
   './index.html',
   './vocab.js',
   './grammar.js',
-  './app.js',
+  './pt/app.js',
+  './core/core.js',
+  './core/questions.js',
+  './pt/sounds.js',
+  './pt/verbs.js',
+  './pt/grammar-screen.js',
+  './pt/numbers.js',
+  './pt/greeting.js',
+  './pt/sentences.js',
+  './pt/desk-sheets.js',
+  './pt/builder.js',
+  './core/start.js',
   './lang/pt.js',
   './instructions.html',
   './changelog.html',

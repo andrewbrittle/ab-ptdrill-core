@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/sounds.js"] = "2611071759";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/sounds.js"] = "2611072103";
 // Português Drill - Portuguese: the Sounds alike drill (pairs from grammar.js).
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.
 

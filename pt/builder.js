@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/builder.js"] = "2611071759";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/builder.js"] = "2611072103";
 // Português Drill - Portuguese: the sentence builder's modes - Doing, Going,
 // Being, Giving - and the Portuguese rules behind them: the cards, verb
 // forms and agreement, word order (já before the verb), the English, the

@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/builder.js"] = "2611071759";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/builder.js"] = "2611072103";
 // Português Drill - The core: the sentence builder, sentence challenge and
 // reading challenge (2026-11-07, refactor step 7 - the mechanics moved here
 // from pt/builder.js, unchanged in behaviour).
@@ -213,7 +213,7 @@ function sbRender() {
     if (sbChallenge && sbTarget) html += `<div class="sb-prompt">"${escapeHtmlText(sbTarget.en)}"</div>`;
     if (chunks.length) {
       html += `<div class="sb-pt">${chunks.map((c, k) => {
-        const txt = k === 0 ? sCap(c.pt) : c.pt;
+        const txt = k === 0 ? c.pt.charAt(0).toUpperCase() + c.pt.slice(1) : c.pt;
         return `<span class="sb-chunk${c.verbOnly ? ' sb-verb-only' : ''}${mark(c)}" style="--slot:var(--slot-${c.slot + 1})">${escapeHtmlText(txt)}</span>`;
       }).join(' ')}.</div>`;
       if (!sbChallenge) html += `<div class="sb-en">"${escapeHtmlText(BUILDER.english(sbSel))}"</div>`;

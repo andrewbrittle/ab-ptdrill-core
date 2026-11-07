@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/core.js"] = "2611071759";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/core.js"] = "2611072103";
 // Português Drill - The core: everything the drill apps share - word lists and Groups, tile
 // selection, search, the drill modes, navigation, speech, settings, install
 // card, scores with decay and weighted picking, backup, saved sessions,
@@ -15,11 +15,16 @@
 // =============================================================================
 
 // VOCAB lives in vocab.js, loaded by the <script src> just before this one.
-if (!window.PT_DRILL_VOCAB) {
+// The app's word lists. DRILL_VOCAB / DRILL_GROUPS / DRILL_SECTIONS, or the
+// names Portuguese's vocab.js has always used (PT_DRILL_...).
+window.DRILL_VOCAB = window.DRILL_VOCAB || window.PT_DRILL_VOCAB;
+window.DRILL_GROUPS = window.DRILL_GROUPS || window.PT_DRILL_GROUPS;
+window.DRILL_SECTIONS = window.DRILL_SECTIONS || window.PT_DRILL_SECTIONS;
+if (!window.DRILL_VOCAB) {
   document.body.insertAdjacentHTML('afterbegin', '<div style="margin:1rem;padding:1rem;border:1.5px solid #e5484d;border-radius:12px;color:#e5484d;font:600 15px/1.4 sans-serif;text-align:center;">' + tx('words.notLoaded') + '</div>');
   throw new Error('vocab.js did not load');
 }
-const VOCAB = window.PT_DRILL_VOCAB;
+const VOCAB = window.DRILL_VOCAB;
 
 // ADAPTER. vocab.js writes each word as
 //   { pt, en, tags, dateAdded, br?, alt?, note? }
@@ -27,7 +32,8 @@ const VOCAB = window.PT_DRILL_VOCAB;
 // name kept from the Japanese engine it grew from). Each item gets jp = pt
 // here, once, so nothing else needs to know.
 function adaptItem(item) {
-  if (item.jp === undefined && typeof item.pt === 'string') item.jp = item.pt;
+  // A word list's word is `word` (any language) or `pt` (Portuguese's lists).
+  if (item.jp === undefined) item.jp = typeof item.word === 'string' ? item.word : item.pt;
   if (!Array.isArray(item.tags)) item.tags = [];
   return item;
 }
@@ -103,7 +109,7 @@ function validatePrivateVocabPack(pack) {
 // code 2026-10-11. THEMES keeps its old shape (key -> definition) so
 // everything that reads it is unchanged; order = the order in vocab.js.
 const THEMES = {};
-(window.PT_DRILL_GROUPS || []).forEach(g => { THEMES[g.key] = g; });
+(window.DRILL_GROUPS || []).forEach(g => { THEMES[g.key] = g; });
 
 // itemTierVisible below is the single gate on which items show, so a hidden
 // tier could be added later with no change here.
@@ -934,7 +940,10 @@ function showTilePeekBubble(tile, item) {
   // the bubble's side is known, since it isn't always above the card.
     // The second line shows the Brazilian form where it differs, then any
     // usage note.
-  const extra = [item.br ? tx('tiles.brazil', { w: escapeHtmlText(item.br) }) : '', item.note ? escapeHtmlText(item.note) : ''].filter(Boolean).join(' · ');
+  // A language whose words have a second face (a reading worked out by rule,
+  // LANG.reading - Bulgarian's Latin spelling) shows it first.
+  const reading = LANG.reading && !item.noReading ? LANG.reading(item.jp) : '';
+  const extra = [reading ? escapeHtmlText(reading) : '', item.br ? tx('tiles.brazil', { w: escapeHtmlText(item.br) }) : '', item.note ? escapeHtmlText(item.note) : ''].filter(Boolean).join(' · ');
   b.innerHTML = `<div class="peek-jp">${escapeHtmlText(item.jp)}</div>${extra ? `<div class="peek-romaji">${extra}</div>` : ''}<div class="peek-en">${escapeHtmlText(item.en)}</div>`;
   document.body.appendChild(b);
   const r = tile.getBoundingClientRect();
@@ -1275,9 +1284,9 @@ function navRecord(id) {
   navStack.push(prev);
 }
 function navBack() {
-  const greet = document.querySelector('#greeting-overlay.show');
-  if (greet) { dismissGreeting(); return; }
-  if (typeof hideTilePeekBubble === 'function') hideTilePeekBubble();
+  // The app can take Back first (Portuguese: closing the daily greeting).
+  if (APP.onBack && APP.onBack()) return;
+  hideTilePeekBubble();
   // Safety net: no history on an inner page still goes to its section's main page.
   if (!navStack.length && !NAV_ROOTS.includes(navCurrent)) navStack.push(NAV_HOME[navCurrent] || 'match-settings');
   if (!navStack.length) return;
@@ -2060,13 +2069,14 @@ function getScoreKey(q) {
 
 // halfCredit (Portuguese build): a typed answer with the right letters but
 // slipped accents - counts, at half the boost, like a hinted answer.
-// production (2026-10-24, the principle "scoring must
-// never punish trying the hard thing"): a typed or said-out-loud answer that
-// misses never lowers the score - a right one still raises it - so the hard
-// modes are never a risk to your greens.
+// production: an answer you typed or said yourself rather than picked.
+// 2026-10-24 ("scoring must never punish trying the hard thing"): a miss
+// never lowered the score. 2026-11-07: it costs a little (0.25, against 0.75
+// for a wrong pick) - small enough that the hard modes are no risk to your
+// greens and owning up in Say mode is cheap, but not nothing, or a miss
+// would mean nothing.
 function recordKanaResult(q, correct, halfCredit, production) {
   if (!isTrackedItem(q)) return;
-  if (production && !correct) return;
   const key = getScoreKey(q);
   const isConsistencyItem = questionType(q).scoring === 'consistency';
   // Numbers/time track many sub-answers under one key (numbers-consistency /
@@ -2077,7 +2087,7 @@ function recordKanaResult(q, correct, halfCredit, production) {
   // correct answers now earn less than wrong answers cost, so a single slip
   // takes more than one lucky guess to fully undo.
   const correctIncrement = isConsistencyItem ? 0.1 : 0.5;
-  const wrongIncrement = isConsistencyItem ? 0.1 : 0.75;
+  const wrongIncrement = isConsistencyItem ? 0.1 : production ? 0.25 : 0.75;
   // Optional (off by default): a correct answer only counts for half as much
   // if the hint/speak button was used first - wrong answers always cost the
   // full amount regardless, since that part was never in question.
@@ -2353,7 +2363,7 @@ function setupCatBar(barEl, counts) {
 // similar way to the others" - just a different item source.
 // Topic pills (2026-10-11) - from vocab.js's PT_DRILL_SECTIONS; replaced a
 // single "Topics" pill listing all categories at once.
-const SECTIONS = (window.PT_DRILL_SECTIONS && window.PT_DRILL_SECTIONS.length) ? window.PT_DRILL_SECTIONS : [{ key: 'all', label: tx('sections.topics') }];
+const SECTIONS = (window.DRILL_SECTIONS && window.DRILL_SECTIONS.length) ? window.DRILL_SECTIONS : [{ key: 'all', label: tx('sections.topics') }];
 const SECTION_KEYS = SECTIONS.map(s => s.key);
 function renderSectionPills() {
   const row = document.getElementById('vocab-level-filter-row');
@@ -2467,7 +2477,8 @@ function refreshRandomView() {
   setupCatBar(document.getElementById('theme-all-vocab-swatch'), getCategoryBandCounts(getCoreVocabPool()));
   setupCatBar(document.getElementById('theme-weakest-vocab-swatch'), getCategoryBandCounts(getWeakestVocabItems(20)));
   setupCatBar(document.getElementById('theme-untested-vocab-swatch'), getCategoryBandCounts(getUntestedVocabItems()));
-  setupCatBar(document.getElementById('theme-sounds-swatch'), getCategoryBandCounts(soundScoreItems()));
+  // The app's own random drills (APP.randomDrills - Sounds alike for Portuguese).
+  Object.entries(APP.randomDrills || {}).forEach(([key, d]) => setupCatBar(document.getElementById('theme-' + key + '-swatch'), getCategoryBandCounts(d.items())));
     // How many are still untested, e.g. "(610 of 872)". Counted by score key,
     // so a word listed in two topics counts once.
   const untestedEl = document.getElementById('untested-count');
@@ -2504,7 +2515,7 @@ function startSelectedRandom() {
   if (randomChoice === 'all') startRandomMatchEverything();
   else if (randomChoice === 'weakest') startWeakestVocab();
   else if (randomChoice === 'untested') startUntestedVocab();
-  else if (randomChoice === 'sounds') startSoundDrill();
+  else if (APP.randomDrills && APP.randomDrills[randomChoice]) APP.randomDrills[randomChoice].start();
 }
 
 // Re-applies confidence shading to every score-keyed tile in a container

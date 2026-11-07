@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["vocab.js"] = "2611071759";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["vocab.js"] = "2611072103";
 // Português Drill - the word list (European Portuguese).
 // Loaded by index.html with a plain <script src="vocab.js"> BEFORE its own
 // script, which reads window.PT_DRILL_VOCAB. A .js file rather than .json so it
@@ -79,6 +79,8 @@ window.PT_DRILL_VOCAB = {
       {pt:"pode tirar uma fotografia?", en:"could you take a photo?", br:"pode tirar uma foto?", tags:["phrases", "trip", "br-diff"], dateAdded:"2026-10-10"},
       {pt:"onde fica a casa de banho?", en:"where's the toilet?", br:"onde fica o banheiro?", tags:["phrases", "trip", "br-diff"], dateAdded:"2026-10-10"},
       {pt:"tenho uma reserva", en:"I have a reservation", tags:["phrases", "trip"], dateAdded:"2026-10-10"},
+      {pt:"queria…", en:"I'd like…", note:"queria is the usual polite way to ask for something in Portugal", tags:["phrases", "trip"], dateAdded:"2026-11-07"},
+      {pt:"tem…?", en:"do you have…?", note:"tem pão? - do you have bread?", tags:["phrases", "trip"], dateAdded:"2026-11-07"},
     ],
   },
   "vocab-little-words": {
@@ -851,6 +853,8 @@ window.PT_DRILL_VOCAB = {
       {pt:"Piso", en:"floor / level", note:"Piso 0 is the ground floor, Piso -1 below it", tags:["signs", "trip"], dateAdded:"2026-10-11"},
       {pt:"Horário de funcionamento", en:"opening hours", tags:["signs", "trip"], dateAdded:"2026-10-10"},
       {pt:"Fechado para férias", en:"closed for holidays", tags:["signs", "trip"], dateAdded:"2026-10-10"},
+      {pt:"Entrada proibida", en:"no entry", tags:["signs", "trip"], dateAdded:"2026-11-07"},
+      {pt:"Informações", en:"information", tags:["signs", "trip"], dateAdded:"2026-11-07"},
     ],
   },
   "vocab-health": {

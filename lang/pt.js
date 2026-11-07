@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["lang/pt.js"] = "2611071759";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["lang/pt.js"] = "2611072103";
 // Portuguese (as spoken in Portugal) - the language module.
 //
 // Everything about Portuguese that is a rule rather than a list lives here,
@@ -173,6 +173,7 @@ function pickVoice(voices) {
 }
 
 export default {
+  id: 'pt',
   code: 'pt-PT',
   pickVoice,           // (device voices) -> { voice, fallback }: Portugal first, Brazil with a note
   numberToWords,       // 0-999 999: "mil duzentos e cinquenta"

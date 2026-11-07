@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/questions.js"] = "2611071759";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/questions.js"] = "2611072103";
 // Português Drill - The core: the drill screen and its question types - the registry, drawing a
 // question, choice / typed / listening / say-it answers, marking and scoring.
 // Each kind of question registers itself (word, number and time here; the
@@ -73,6 +73,7 @@ function promptFontSize(text) {
 // where it differs, and any usage note.
 function answerNotesHtml(q) {
   let html = '';
+  if (q.disp === 'word' && LANG.reading) html += `<div class="feedback-standard-note">${escapeHtmlText(LANG.reading(q.char))}</div>`;
   if (q.br) html += `<div class="feedback-standard-note">${tx('drill.inBrazil', { w: escapeHtmlText(q.br) })}</div>`;
   if (q.note) html += `<div class="feedback-standard-note">${escapeHtmlText(q.note)}</div>`;
   return html;
@@ -354,6 +355,7 @@ function showResults() {
     // only the char portion, same visual as before.
     const missedChars = missed.map(k => k.split('|')[0]);
     missedEl.innerHTML = '<div class="missed-chars">' + missedChars.map(escapeHtmlText).join(' · ') + '</div>';
+    missedBtn.textContent = tx('results.repeatMissed', { n: missed.length });
     missedBtn.style.display = 'block';
   } else {
     missedLabel.textContent = '';

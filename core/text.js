@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/text.js"] = "2611071759";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/text.js"] = "2611072103";
 // Português Drill - The core: interface text (2026-11-07, refactor step 8).
 //
 // Every word on screen that isn't the language being learnt comes from a
@@ -21,7 +21,7 @@ function tx(key, vars) {
   if (v === undefined) { console.warn('missing text: ' + key); return key; }
   if (typeof v === 'object') v = v[UI_PLURALS.select(vars && vars.n)] || v.other;
   // {target} is always the language being learnt, in the learner's language.
-  const all = Object.assign({ target: window.UI_TEXT['target.name'] }, vars);
+  const all = Object.assign({ target: window.UI_TEXT['lang.' + (window.LANG && LANG.id)] || window.UI_TEXT['target.name'] }, vars);
   return v.replace(/\{(\w+)\}/g, (m, k) => (k in all ? all[k] : m));
 }
 function applyPageText(root) {

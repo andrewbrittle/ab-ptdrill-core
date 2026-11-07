@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/start.js"] = "2611071759";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["core/start.js"] = "2611072103";
 // Português Drill - The core: starting the app - runs last, once every other file has loaded.
 // Split out of app.js on 2026-11-07 (refactor step 6); code unchanged.
 
@@ -14,7 +14,8 @@ setMatchLevel(currentMatchLevel);
 
 syncVocabModeToggles();
 tryRestoreDrillSession();
-maybeShowDailyGreeting();
+// Anything the app does once the core has started (Portuguese: the daily greeting).
+(APP.onStart || []).forEach(f => f());
 
 // Keyboard shortcuts for the drill screen, for anyone on a laptop/desktop:
 // digits 1-4 pick the matching option (always exactly 4 per question), and

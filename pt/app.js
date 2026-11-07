@@ -1,4 +1,4 @@
-(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/app.js"] = "2611071759";
+(window.__BUILD_FILES = window.__BUILD_FILES || {})["pt/app.js"] = "2611072103";
 // Português Drill - this app's settings for the core (2026-11-07, refactor
 // step 6). Everything the core needs to know about *this* app that isn't a
 // rule of the language (those are in lang/pt.js) or a list (vocab.js,
@@ -34,6 +34,16 @@ window.APP = {
     'desk-sheets': { home: 'build', pill: 'nav-build' },
     sb: { home: 'build', pill: 'nav-build' },
   },
+
+  // Hooks the core calls (2026-11-07): at start-up, on Back, and the extra
+  // drills on the random page.
+  onStart: [() => maybeShowDailyGreeting()],
+  onBack: () => {
+    if (!document.querySelector('#greeting-overlay.show')) return false;
+    dismissGreeting();
+    return true;
+  },
+  randomDrills: { sounds: { items: () => soundScoreItems(), start: () => startSoundDrill() } },
 
   // Shown under "Tap to hear" when the device has no Portugal voice.
   voiceNotes: { fallback: tx('voice.brazilOnly'), none: tx('voice.none') },
